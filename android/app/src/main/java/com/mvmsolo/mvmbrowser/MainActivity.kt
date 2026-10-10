@@ -8,6 +8,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -178,20 +179,32 @@ class MainActivity : Activity() {
             loadsImagesAutomatically = true
             javaScriptCanOpenWindowsAutomatically = false
             setSupportMultipleWindows(false)
-            allowFileAccess = false
+            // Needed only for app-private MHTML archives; file-to-file and file-to-network
+            // universal access remain disabled below.
+            allowFileAccess = true
+            allowFileAccessFromFileURLs = false
+            allowUniversalAccessFromFileURLs = false
             allowContentAccess = false
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             cacheMode = WebSettings.LOAD_DEFAULT
             builtInZoomControls = true
             displayZoomControls = false
-            safeBrowsingEnabled = true
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) safeBrowsingEnabled = true
             userAgentString = userAgentString
         }
         CookieManager.getInstance().setAcceptCookie(true)
         web.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                val scheme = request.url.scheme?.lowercase()
-                return scheme != "http" && scheme != "https" && scheme != "file" && scheme != "about"
+                val uri = request.url
+                val scheme = uri.scheme?.lowercase()
+                if (scheme == "http" || scheme == "https" || scheme == "about") return false
+                if (scheme == "file") {
+                    val path = uri.path.orEmpty()
+                    val localArchive = path.startsWith(savedDir.absolutePath + File.separator)
+                    val bundledAsset = path.startsWith("/android_asset/")
+                    return !(localArchive || bundledAsset)
+                }
+                return true
             }
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 progress.visibility = View.VISIBLE
