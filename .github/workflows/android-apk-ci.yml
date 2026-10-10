@@ -1,4 +1,4 @@
-name: MVM Browser Android APK CI
+name: MVM Browser Android APK Build
 
 on:
   push:
