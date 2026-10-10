@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-apk-${{ github.ref }}
+  group: android-apk-${{ github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -61,6 +61,7 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Install Capacitor CLI and Android platform
+        timeout-minutes: 5
         run: npm install --no-save --package-lock=false --legacy-peer-deps @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
 
       - name: Generate Android project
