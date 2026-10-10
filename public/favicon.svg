@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="mvm" x1="7" y1="16" x2="25" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00F0FF"/>
+      <stop offset="0.5" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#FF2E93"/>
+    </linearGradient>
+  </defs>
+  <polygon fill="#05060A" stroke="url(#mvm)" stroke-width="1.25" stroke-linejoin="miter" points="14.66,3.62 17.34,3.62 26.05,8.65 27.39,10.98 27.39,21.02 26.05,23.35 17.34,28.38 14.66,28.38 5.95,23.35 4.61,21.02 4.61,10.97 5.95,8.65"/>
+  <polyline fill="none" stroke="url(#mvm)" stroke-width="1.75" stroke-linejoin="miter" stroke-miterlimit="8" stroke-linecap="square" points="7.3,19.4 9.7,10.6 11.15,13.9 12.7,10.6 16,22.6 19.3,10.6 20.85,13.9 22.3,10.6 24.7,19.4"/>
+</svg>
