@@ -391,7 +391,7 @@ class MainActivity : Activity() {
             if (tab.url.startsWith("http://") || tab.url.startsWith("https://")) {
                 val old = prefs.getStringSet("history", emptySet())?.toMutableSet() ?: mutableSetOf()
                 old.add("${System.currentTimeMillis()}|${tab.url}")
-                prefs.edit().putStringSet("history", old.takeLast(200).toSet()).apply()
+                prefs.edit().putStringSet("history", old.toList().takeLast(200).toSet()).apply()
             }
         }
         CookieManager.getInstance().flush()
