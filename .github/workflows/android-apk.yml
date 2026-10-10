@@ -1,6 +1,9 @@
 name: Build Android APK
 
 on:
+  push:
+    branches:
+      - feat/animated-icons-android-apk
   workflow_dispatch:
     inputs:
       web_url:
@@ -21,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      MVM_WEB_URL: ${{ inputs.web_url }}
+      MVM_WEB_URL: ${{ inputs.web_url || '' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -31,11 +34,15 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           const raw = process.env.MVM_WEB_URL ?? "";
-          let url;
-          try { url = new URL(raw); } catch { throw new Error("Enter a valid deployed HTTPS URL in the workflow input."); }
-          if (url.protocol !== "https:") throw new Error("The APK wrapper only accepts HTTPS URLs.");
-          if (url.username || url.password) throw new Error("Credentials must not be embedded in the URL.");
-          console.log("Target URL:", url.origin);
+          if (!raw) {
+            console.log("No hosted URL supplied; building the local shell APK.");
+          } else {
+            let url;
+            try { url = new URL(raw); } catch { throw new Error("Enter a valid deployed HTTPS URL in the workflow input."); }
+            if (url.protocol !== "https:") throw new Error("The APK wrapper only accepts HTTPS URLs.");
+            if (url.username || url.password) throw new Error("Credentials must not be embedded in the URL.");
+            console.log("Target URL:", url.origin);
+          }
           NODE
 
       - name: Set up Java
@@ -55,7 +62,7 @@ jobs:
         run: npm ci
 
       - name: Install Capacitor CLI and Android platform
-        run: npm install --no-save --package-lock=false @capacitor/core @capacitor/cli @capacitor/android
+        run: npm install --no-save --package-lock=false @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
 
       - name: Generate Android project
         run: npx cap add android
