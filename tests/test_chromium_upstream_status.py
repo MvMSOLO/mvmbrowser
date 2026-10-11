@@ -68,6 +68,25 @@ class ChromiumUpstreamStatusTests(unittest.TestCase):
         self.assertEqual(status.version_major("155.0.8059.39"), 155)
         self.assertIsNone(status.version_major("not-a-version"))
 
+    def test_strict_report_check_rejects_partial_source_data(self):
+        good_report = """# report
+- **Version:** 155.0.8059.39
+- **uazo/cromite latest release:** [v153.0.8010.37](https://example.test)
+- The latest observed uazo/cromite release is 2 major version(s) behind.
+"""
+        self.assertEqual(status.strict_report_problems(good_report), [])
+
+        partial_report = """# report
+- **Unavailable:** could not read the Chrome feed.
+## Data-source warnings
+- Chrome Releases feed: timeout
+- A version comparison could not be calculated from the available metadata.
+"""
+        problems = status.strict_report_problems(partial_report)
+        self.assertGreaterEqual(len(problems), 2)
+        self.assertTrue(any("metadata sources" in item for item in problems))
+        self.assertTrue(any("comparison could not be calculated" in item for item in problems))
+
     def test_report_flags_a_major_version_gap_without_claiming_security_parity(self):
         chrome = {
             "title": "Chrome for Android Update",
