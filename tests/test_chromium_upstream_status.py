@@ -32,6 +32,37 @@ class ChromiumUpstreamStatusTests(unittest.TestCase):
         self.assertEqual(result["version"], "155.0.8059.39")
         self.assertIn("example.html", result["url"])
 
+    def test_atom_feed_separates_early_stable_from_stable(self):
+        feed = b"""<?xml version="1.0" encoding="UTF-8"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <entry>
+            <title>Chrome for Android Update</title>
+            <published>2026-10-07T15:30:00-07:00</published>
+            <link rel="alternate" href="https://example.test/chrome-156-early"/>
+            <content type="html"><![CDATA[<p>We've just released Chrome 156 (156.0.8078.25) for Android to a small percentage of users. This is an Early Stable release.</p>]]></content>
+          </entry>
+          <entry>
+            <title>Chrome for Android Update</title>
+            <published>2026-10-06T12:00:00Z</published>
+            <link rel="alternate" href="https://example.test/chrome-155-stable"/>
+            <content type="html"><![CDATA[<p>We've just released Chrome 155 (155.0.8059.39) for Android. It'll become available on Google Play over the next few days.</p>]]></content>
+          </entry>
+        </feed>"""
+        with patch.object(status, "fetch_bytes", return_value=feed):
+            stable = status.latest_android_stable_release()
+        with patch.object(status, "fetch_bytes", return_value=feed):
+            early = status.latest_android_early_stable_release()
+
+        self.assertIsNotNone(stable)
+        self.assertIsNotNone(early)
+        assert stable is not None
+        assert early is not None
+        self.assertEqual(stable["version"], "155.0.8059.39")
+        self.assertEqual(stable["channel"], "stable")
+        self.assertEqual(early["version"], "156.0.8078.25")
+        self.assertEqual(early["channel"], "early stable")
+        self.assertIn("chrome-156-early", early["url"])
+
     def test_version_major_handles_release_tags(self):
         self.assertEqual(status.version_major("v153.0.8010.37-abc123"), 153)
         self.assertEqual(status.version_major("155.0.8059.39"), 155)
@@ -60,6 +91,7 @@ class ChromiumUpstreamStatusTests(unittest.TestCase):
         }
         with (
             patch.object(status, "latest_android_stable_release", return_value=chrome),
+            patch.object(status, "latest_android_early_stable_release", return_value=None),
             patch.object(status, "latest_github_release", return_value=release),
             patch.object(status, "release_list", return_value=[]),
             patch.object(status, "latest_github_commit", return_value=commit),
