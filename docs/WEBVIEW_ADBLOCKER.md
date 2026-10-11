@@ -2,7 +2,7 @@
 
 ## Current implementation
 
-- Uses a small, bundled, offline host denylist in `AdBlocker.kt`.
+- Uses a bundled offline host denylist in `AdBlocker.kt` covering common ad networks and analytics/tracking endpoints (including Google ad hosts, Taboola, Outbrain, Criteo, AppLovin, Adjust, AppsFlyer, and others). The list is intentionally conservative and may need site-specific tuning.
 - Checks only HTTP(S) subresource requests in `WebViewClient.shouldInterceptRequest`; top-level navigation is deliberately not blocked.
 - Matching requests receive an empty HTTP 204 response.
 - The toolbar's **SHIELD ON/OFF** control persists the enabled state in app preferences and reloads the active tab.
