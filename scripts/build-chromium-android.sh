@@ -14,8 +14,28 @@ set -Eeuo pipefail
 CHROMIUM_ROOT="${CHROMIUM_ROOT:-$HOME/chromium-mvm}"
 DEPOT_TOOLS="${DEPOT_TOOLS:-$HOME/depot_tools}"
 CHROMIUM_REVISION="${CHROMIUM_REVISION:-}"
+CHROMIUM_MIN_FREE_GB="${CHROMIUM_MIN_FREE_GB:-100}"
+ALLOW_LOW_DISK="${ALLOW_LOW_DISK:-0}"
+ALLOW_LOW_MEMORY="${ALLOW_LOW_MEMORY:-0}"
+ALLOW_UNKNOWN_MEMORY="${ALLOW_UNKNOWN_MEMORY:-0}"
 SRC_DIR="$CHROMIUM_ROOT/src"
 OUT_DIR="out/MVM"
+
+if ! [[ "$CHROMIUM_MIN_FREE_GB" =~ ^[0-9]+$ ]] || (( CHROMIUM_MIN_FREE_GB < 1 )); then
+  echo "ERROR: CHROMIUM_MIN_FREE_GB must be a positive whole number." >&2
+  exit 2
+fi
+for flag_name in ALLOW_LOW_DISK ALLOW_LOW_MEMORY ALLOW_UNKNOWN_MEMORY; do
+  flag_value="${!flag_name}"
+  if [[ "$flag_value" != "0" && "$flag_value" != "1" ]]; then
+    echo "ERROR: $flag_name must be set to 0 or 1." >&2
+    exit 2
+  fi
+done
+if [[ -n "$CHROMIUM_REVISION" ]] && ! [[ "$CHROMIUM_REVISION" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
+  echo "ERROR: CHROMIUM_REVISION contains unsupported characters." >&2
+  exit 2
+fi
 
 if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
   echo "ERROR: Chromium's official Android build requires x86_64 Linux." >&2
@@ -30,17 +50,20 @@ fi
 mkdir -p "$CHROMIUM_ROOT"
 CHROMIUM_ROOT="$(cd "$CHROMIUM_ROOT" && pwd)"
 SRC_DIR="$CHROMIUM_ROOT/src"
+if [[ "$CHROMIUM_ROOT" =~ [[:space:]] || "$DEPOT_TOOLS" =~ [[:space:]] ]]; then
+  echo "ERROR: Chromium and depot_tools paths must not contain whitespace." >&2
+  exit 2
+fi
 
 # Fail before a large checkout if the host cannot meet Chromium's
 # documented minimums. An override is available only for an intentional test.
 FREE_KB="$(df -Pk "$CHROMIUM_ROOT" | awk 'NR==2 {print $4}')"
 FREE_GB="$((FREE_KB / 1024 / 1024))"
-CHROMIUM_MIN_FREE_GB="${CHROMIUM_MIN_FREE_GB:-100}"
 if (( FREE_GB < CHROMIUM_MIN_FREE_GB )); then
   echo "ERROR: only ${FREE_GB} GiB free at $CHROMIUM_ROOT; need at least ${CHROMIUM_MIN_FREE_GB} GiB." >&2
   echo "Chromium's official Android build guide requires at least 100 GB free." >&2
   echo "Free disk space or explicitly set ALLOW_LOW_DISK=1 to bypass this guard." >&2
-  if [[ "${ALLOW_LOW_DISK:-0}" != "1" ]]; then
+  if [[ "$ALLOW_LOW_DISK" != "1" ]]; then
     exit 2
   fi
 fi
@@ -70,14 +93,18 @@ if (( MEM_KB > 0 )); then
   if (( MEM_GIB < 8 )); then
     echo "ERROR: effective memory limit is ${MEM_GIB} GiB; Chromium's documented minimum is 8 GiB." >&2
     echo "16+ GiB is highly recommended. Set ALLOW_LOW_MEMORY=1 only for an intentional test." >&2
-    if [[ "${ALLOW_LOW_MEMORY:-0}" != "1" ]]; then
+    if [[ "$ALLOW_LOW_MEMORY" != "1" ]]; then
       exit 2
     fi
   elif (( MEM_GIB < 16 )); then
     echo "WARNING: detected ${MEM_GIB} GiB effective RAM; more than 16 GiB is highly recommended." >&2
   fi
 else
-  echo "WARNING: could not determine RAM limit; continuing without a memory preflight." >&2
+  echo "ERROR: could not determine an effective RAM limit; refusing to start a large checkout." >&2
+  echo "Confirm /proc/meminfo or cgroup memory data, or set ALLOW_UNKNOWN_MEMORY=1 for an intentional override." >&2
+  if [[ "$ALLOW_UNKNOWN_MEMORY" != "1" ]]; then
+    exit 2
+  fi
 fi
 
 if (( EUID != 0 )); then
