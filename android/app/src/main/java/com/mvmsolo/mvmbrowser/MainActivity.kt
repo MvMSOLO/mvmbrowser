@@ -87,7 +87,7 @@ class MainActivity : Activity() {
             setPadding(dp(11), 0, 0, 0)
         }
         val spacer = View(this)
-        tabsButton = action("▢ 1") { showTabs() }
+        tabsButton = action("TABS 1") { showTabs() }.apply { textSize = 10f }
         brandRow.addView(logo)
         brandRow.addView(title)
         brandRow.addView(spacer, LinearLayout.LayoutParams(0, 1, 1f))
@@ -100,7 +100,6 @@ class MainActivity : Activity() {
             background = rounded(panel, 0xFF1B2C3B.toInt(), 17)
             setPadding(dp(10), dp(3), dp(4), dp(3))
         }
-        val lock = label("⌕", 21f, cyan, true).apply { gravity = Gravity.CENTER; layoutParams = LinearLayout.LayoutParams(dp(28), dp(44)) }
         address = EditText(this).apply {
             setSingleLine(true)
             textSize = 14f
@@ -121,7 +120,6 @@ class MainActivity : Activity() {
             layoutParams = LinearLayout.LayoutParams(0, dp(44), 1f)
         }
         val go = action("GO") { navigateFromAddress() }
-        addressRow.addView(lock)
         addressRow.addView(address)
         addressRow.addView(go)
         root.addView(addressRow)
@@ -136,26 +134,18 @@ class MainActivity : Activity() {
         webHost = FrameLayout(this)
         root.addView(webHost, LinearLayout.LayoutParams(-1, 0, 1f))
 
-        val bottom = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(0, dp(6), 0, dp(2))
+        val toolbar = WebView(this).apply {
+            setBackgroundColor(Color.TRANSPARENT)
+            overScrollMode = View.OVER_SCROLL_NEVER
+            isVerticalScrollBarEnabled = false
+            isHorizontalScrollBarEnabled = false
+            settings.javaScriptEnabled = true
+            settings.allowFileAccess = true
+            settings.allowContentAccess = false
+            addJavascriptInterface(BrowserBridge(), "BrowserBridge")
+            loadUrl("file:///android_asset/toolbar.html")
         }
-        listOf(
-            "‹" to { goBack() },
-            "›" to { goForward() },
-            "⌂" to { home() },
-            "☆" to { toggleBookmark() },
-            "↓" to { saveOffline() },
-            "+" to { newTab() }
-        ).forEach { (symbol, callback) ->
-            val b = action(symbol, callback).apply {
-                textSize = 22f
-                layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f)
-            }
-            bottom.addView(b)
-        }
-        root.addView(bottom)
+        root.addView(toolbar, LinearLayout.LayoutParams(-1, dp(56)))
         setContentView(root)
     }
 
@@ -358,7 +348,16 @@ class MainActivity : Activity() {
         updateTabButton()
     }
 
-    private fun updateTabButton() { if (::tabsButton.isInitialized) tabsButton.text = "▢ ${tabs.size}" }
+    private fun updateTabButton() { if (::tabsButton.isInitialized) tabsButton.text = "TABS ${tabs.size}" }
+
+    inner class BrowserBridge {
+        @android.webkit.JavascriptInterface fun back() { runOnUiThread { goBack() } }
+        @android.webkit.JavascriptInterface fun forward() { runOnUiThread { goForward() } }
+        @android.webkit.JavascriptInterface fun home() { runOnUiThread { this@MainActivity.home() } }
+        @android.webkit.JavascriptInterface fun bookmark() { runOnUiThread { toggleBookmark() } }
+        @android.webkit.JavascriptInterface fun saveOffline() { runOnUiThread { this@MainActivity.saveOffline() } }
+        @android.webkit.JavascriptInterface fun newTab() { runOnUiThread { this@MainActivity.newTab() } }
+    }
 
     private fun action(text: String, callback: () -> Unit): TextView = label(text, 14f, textColor, true).apply {
         gravity = Gravity.CENTER
