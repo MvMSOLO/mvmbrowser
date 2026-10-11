@@ -1,12 +1,15 @@
-import sys
+import importlib.util
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
-
-import report_chromium_upstream_status as status  # noqa: E402
+SCRIPT_PATH = ROOT / "scripts" / "report-chromium-upstream-status.py"
+SPEC = importlib.util.spec_from_file_location("report_chromium_upstream_status", SCRIPT_PATH)
+if SPEC is None or SPEC.loader is None:
+    raise ImportError(f"Cannot load status-report script at {SCRIPT_PATH}")
+status = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(status)
 
 
 class ChromiumUpstreamStatusTests(unittest.TestCase):
