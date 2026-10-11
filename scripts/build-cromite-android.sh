@@ -17,7 +17,7 @@ readonly CROMITE_SHA="11507ac1061b5ea227806f5e84db5a57df6ccf6a"
 readonly IMAGE="uazo/cromite-build:${CROMITE_VERSION}-${CROMITE_SHA}"
 readonly EXPECTED_RELEASE_APK_SHA256="9db12af1af021f42b4371e76d0e9fe476a7085bbbbc76bc410a538d028bf6071"
 readonly MIN_FREE_GIB="${CROMITE_MIN_FREE_GIB:-150}"
-readonly OUTPUT_DIR="${OUTPUT_DIR:-$PWD/artifacts/cromite}"
+OUTPUT_DIR="${OUTPUT_DIR:-$PWD/artifacts/cromite}"
 EXECUTE=0
 
 if [[ "${1:-}" == "--execute" && $# -eq 1 ]]; then
