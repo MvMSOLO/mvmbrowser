@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<style>
+:root{color-scheme:dark;--cyan:#45e6ff;--panel:#0d1420;--line:#1b2c3b}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:transparent;color:#edfaff;font-family:system-ui,sans-serif}
+nav{display:flex;align-items:center;justify-content:space-between;gap:6px;height:100%;padding:4px 0}
+button{height:48px;min-width:0;flex:1;display:flex;align-items:center;justify-content:center;color:var(--cyan);background:linear-gradient(145deg,#111d2b,#0b111b);border:1px solid var(--line);border-radius:13px;padding:0;margin:0}
+button:active{background:#173042;transform:scale(.96)}button svg{width:25px;height:25px;overflow:visible}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style><script src="mvm-icons.js"></script></head>
+<body><nav aria-label="Browser controls">
+<button aria-label="Back" onclick="BrowserBridge.back()"><i data-icon="mvm-back"></i></button>
+<button aria-label="Forward" onclick="BrowserBridge.forward()"><i data-icon="mvm-forward"></i></button>
+<button aria-label="Home" onclick="BrowserBridge.home()"><i data-icon="mvm-home"></i></button>
+<button aria-label="Bookmark" onclick="BrowserBridge.bookmark()"><i data-icon="mvm-bookmark"></i></button>
+<button aria-label="Save offline" onclick="BrowserBridge.saveOffline()"><i data-icon="mvm-download"></i></button>
+<button aria-label="New tab" onclick="BrowserBridge.newTab()"><i data-icon="mvm-tab-new"></i></button>
+</nav><script>document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=window.mvmIcon(el.dataset.icon,25));</script></body></html>
