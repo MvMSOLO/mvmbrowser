@@ -1,0 +1,53 @@
+name: Cromite ARM64 APK Baseline
+
+on:
+  push:
+    branches: [adopt-cromite-source-fork]
+    paths:
+      - ".github/workflows/cromite-apk-baseline.yml"
+      - "docs/CROMITE_APK_BASELINE.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-verify-apk:
+    name: Fetch and verify upstream ARM64 APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download pinned upstream Cromite release APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p verified-apk
+          url='https://github.com/uazo/cromite/releases/download/v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a/arm64_ChromePublic.apk'
+          expected='9db12af1af021f42b4371e76d0e9fe476a7085bbbbc76bc410a538d028bf6071'
+          curl --fail --show-error --location --retry 3 --retry-delay 2 --max-time 600 "$url" -o verified-apk/arm64_ChromePublic.apk
+          actual="$(sha256sum verified-apk/arm64_ChromePublic.apk | awk '{print $1}')"
+          printf 'expected=%s\nactual=%s\n' "$expected" "$actual"
+          test "$actual" = "$expected"
+          printf '%s  %s\n' "$expected" 'arm64_ChromePublic.apk' > verified-apk/SHA256SUMS
+          cat > verified-apk/BASELINE.txt <<'EOF'
+          Upstream project: https://github.com/uazo/cromite
+          Release: v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a
+          Asset: arm64_ChromePublic.apk
+          SHA-256: 9db12af1af021f42b4371e76d0e9fe476a7085bbbbc76bc410a538d028bf6071
+          This is an upstream-signed/packaged upstream artifact, not an MVM-branded build.
+          It is a binary baseline for inspection only; verify signing, package ID, license notices and device compatibility before installation or redistribution.
+          EOF
+          {
+            echo '### Upstream Cromite APK baseline verified'
+            echo '- SHA-256 matches the pinned official release asset.'
+            echo '- This is not an MVM Browser APK and has not been rebranded.'
+            echo '- No APK was committed to the Git repository.'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload verified APK as a temporary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cromite-arm64-upstream-baseline
+          path: verified-apk/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
