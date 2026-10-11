@@ -1,0 +1,35 @@
+name: Chromium Bootstrap Scripts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/build-chromium-android.sh'
+      - 'scripts/check-chromium-build-host.sh'
+      - '.github/workflows/chromium-bootstrap-check.yml'
+  pull_request:
+    paths:
+      - 'scripts/build-chromium-android.sh'
+      - 'scripts/check-chromium-build-host.sh'
+      - '.github/workflows/chromium-bootstrap-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  bash-syntax:
+    name: Validate bootstrap scripts (no Chromium build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Validate Bash syntax
+        run: |
+          bash -n scripts/build-chromium-android.sh
+          bash -n scripts/check-chromium-build-host.sh
+      - name: Verify build guardrails
+        run: |
+          grep -Fq 'fetch --nohooks --no-history android' scripts/build-chromium-android.sh
+          grep -Fq 'CHROMIUM_MIN_FREE_GB=' scripts/build-chromium-android.sh
+          grep -Fq 'chrome_public_apk' scripts/build-chromium-android.sh
