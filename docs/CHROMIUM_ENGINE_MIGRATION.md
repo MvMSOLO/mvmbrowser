@@ -31,14 +31,14 @@ A starter script is now committed at [`scripts/build-chromium-android.sh`](../sc
 
 Before any source download, run the no-cost environment report: `bash scripts/check-chromium-build-host.sh`. It prints CPU, RAM, free disk, and basic Linux-distribution details without installing packages, downloading source, or creating cloud resources.
 
-Run the build only on a host that meets the report's requirements, after confirming available disk/network and the intended cost. For reproducible testing, pass an exact Chromium commit/ref through `CHROMIUM_REVISION`:
+Run the build only on a host that meets the report's requirements, after confirming available disk/network and the intended cost. For reproducible testing, pin both Chromium and `depot_tools` to a known commit or ref. When `DEPOT_TOOLS_REVISION` is supplied, the script checks out that tool version and disables its auto-update; without it, the default auto-update behavior remains enabled:
 
 ```bash
 bash scripts/check-chromium-build-host.sh
-CHROMIUM_REVISION=<commit-or-ref> bash scripts/build-chromium-android.sh
+CHROMIUM_REVISION=<commit-or-ref> DEPOT_TOOLS_REVISION=<commit-or-ref> bash scripts/build-chromium-android.sh
 ```
 
-At completion, the script reports the actual Chromium commit, `depot_tools` commit, GN-args SHA-256, and APK SHA-256. It also writes `MVM-Chromium-arm64.metadata.txt` and copies the effective GN args to `MVM-Chromium-arm64.args.gn` next to the APK. When `CHROMIUM_REVISION` is supplied, the script resolves it to an exact commit (using `FETCH_HEAD` for remotely fetched refs) before syncing dependencies. Save the APK, metadata, GN args file, and build logs together when comparing repeat builds.
+At completion, the script reports the actual Chromium commit, `depot_tools` commit, GN-args SHA-256, and APK SHA-256. It also writes `MVM-Chromium-arm64.metadata.txt` and copies the effective GN args to `MVM-Chromium-arm64.args.gn` next to the APK. When `CHROMIUM_REVISION` is supplied, the script resolves it to an exact commit (using `FETCH_HEAD` for remotely fetched refs) before syncing dependencies. When `DEPOT_TOOLS_REVISION` is supplied, it does the same for `depot_tools` and records whether automatic tool updates were disabled. Save the APK, metadata, GN args file, and build logs together when comparing repeat builds.
 
 Before any installation attempt, run the offline verifier against the output:
 
