@@ -9,9 +9,11 @@ set -Eeuo pipefail
 #   bash scripts/build-chromium-android.sh
 # Optional:
 #   CHROMIUM_ROOT="$HOME/chromium-mvm" DEPOT_TOOLS="$HOME/depot_tools" bash scripts/build-chromium-android.sh
+#   CHROMIUM_REVISION=<commit-or-ref> bash scripts/build-chromium-android.sh
 
 CHROMIUM_ROOT="${CHROMIUM_ROOT:-$HOME/chromium-mvm}"
 DEPOT_TOOLS="${DEPOT_TOOLS:-$HOME/depot_tools}"
+CHROMIUM_REVISION="${CHROMIUM_REVISION:-}"
 SRC_DIR="$CHROMIUM_ROOT/src"
 OUT_DIR="out/MVM"
 
@@ -103,6 +105,12 @@ fi
 
 cd "$SRC_DIR"
 
+if [[ -n "$CHROMIUM_REVISION" ]]; then
+  echo "==> Fetching and pinning Chromium revision: $CHROMIUM_REVISION"
+  git fetch --no-tags origin "$CHROMIUM_REVISION"
+  git checkout --detach "$CHROMIUM_REVISION"
+fi
+
 echo "==> Installing official Chromium Linux/Android build dependencies"
 if (( EUID == 0 )); then
   build/install-build-deps.sh
@@ -142,7 +150,11 @@ fi
 
 DEST="$CHROMIUM_ROOT/MVM-Chromium-arm64.apk"
 cp "$APK" "$DEST"
+BUILD_REVISION="$(git rev-parse HEAD)"
+APK_SHA256="$(sha256sum "$DEST" | awk '{print $1}')"
 echo
 echo "SUCCESS: Upstream Chromium Android browser built."
 echo "APK: $DEST"
+echo "Chromium revision: $BUILD_REVISION"
+echo "APK SHA-256: $APK_SHA256"
 echo "NOTE: This is an unbranded Chromium proof build, not yet the finished MVM Browser."
