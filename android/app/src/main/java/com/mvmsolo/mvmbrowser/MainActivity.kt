@@ -371,8 +371,9 @@ class MainActivity : Activity() {
     private fun isAllowedLocalFileResource(uri: Uri): Boolean {
         if (uri.scheme?.lowercase() != "file" || !uri.authority.isNullOrEmpty()) return false
         val path = uri.path ?: return false
-        if (LocalFilePolicy.isAllowedBundledAssetPath(path)) return true
-        return LocalFilePolicy.isAllowedOfflineArchive(path, savedDir.absolutePath)
+        // Saved MHTML pages are allowed only as top-level navigations. A remote page
+        // must not be able to embed a private offline archive as a file subresource.
+        return LocalFilePolicy.isAllowedBundledAssetPath(path)
     }
 
     private fun isBundledHomeUrl(url: String): Boolean {
