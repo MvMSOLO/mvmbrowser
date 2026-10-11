@@ -13,6 +13,9 @@ on:
       - 'scripts/verify-chromium-apk.sh'
       - 'scripts/smoke-test-chromium-device.sh'
       - 'scripts/report-chromium-upstream-status.py'
+      - 'scripts/check-cromite-release.py'
+      - 'docs/CROMITE_BASELINE_AUDIT.md'
+      - 'tests/test_cromite_release.py'
       - 'tests/test_chromium_upstream_status.py'
       - '.github/workflows/chromium-build-script-check.yml'
       - '.github/workflows/chromium-upstream-watch.yml'
@@ -59,8 +62,9 @@ jobs:
           bash -n scripts/smoke-test-chromium-device.sh
       - name: Validate and test upstream release report
         run: |
-          python3 -m py_compile scripts/report-chromium-upstream-status.py
+          python3 -m py_compile scripts/report-chromium-upstream-status.py scripts/check-cromite-release.py tests/test_cromite_release.py
           python3 -m unittest discover -s tests -p 'test_chromium_upstream_status.py' -v
+          python3 -m unittest discover -s tests -p 'test_cromite_release.py' -v
 
       - name: Test Chromium version parser
         shell: bash
