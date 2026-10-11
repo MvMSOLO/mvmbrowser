@@ -38,6 +38,8 @@ jobs:
           grep -Fq 'chrome_public_apk' scripts/build-chromium-android.sh
           grep -Fq 'APK_SHA256=' scripts/build-chromium-android.sh
           grep -Fq 'install-build-deps.sh --no-prompt' scripts/build-chromium-android.sh
+          grep -Fq 'sudo -n true' scripts/build-chromium-android.sh
+          grep -Fq 'exists but is not a depot_tools' scripts/build-chromium-android.sh
           grep -Fq 'gclient sync --nohooks' scripts/build-chromium-android.sh
       - name: Test preflight pass and fail paths
         shell: bash
