@@ -1,0 +1,27 @@
+name: Chromium Upstream Resource Watch
+
+on:
+  schedule:
+    - cron: "30 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: Check public Chromium release signals
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Generate read-only status report
+        run: python3 scripts/report-chromium-upstream-status.py --output chromium-upstream-status.md
+      - name: Save report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chromium-upstream-status
+          path: chromium-upstream-status.md
+          if-no-files-found: error
+          retention-days: 30
