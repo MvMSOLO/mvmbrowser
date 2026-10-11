@@ -104,6 +104,7 @@ The public price table above is only a market comparison, not a guarantee that t
 - A scheduled read-only release report runs each Monday at 08:30 UTC and when its own report script/workflow changes: .github/workflows/chromium-upstream-watch.yml. Reports are uploaded as a 30-day artifact; the workflow does not download APKs or create cloud resources.
 - The Chromium build script is present but has not been executed here. It checks minimum RAM/disk before checkout, validates paths and configuration before network work, verifies non-interactive sudo before source download, installs dependencies without interactive prompts, runs hooks once after sync, resolves a pinned revision to an exact commit, and writes Chromium/depot_tools revisions plus APK/GN-args SHA-256 values to a metadata sidecar. It also keeps a copy of the effective GN args beside the APK.
 - The offline verifier at scripts/verify-chromium-apk.sh checks the APK ZIP integrity and manifest entry, validates both checksums and metadata target/revision fields, and does not install or launch the APK. Its CI test uses synthetic APK data, not a real Chromium build.
+- The device smoke-test script at scripts/smoke-test-chromium-device.sh verifies artifact integrity, authorized ADB connection, Android API 29+, and arm64-v8a compatibility. `--install` requires an interactive confirmation; CI tests only the no-install preflight with a mock ADB device.
 - The read-only preflight supports configurable thresholds for CI path tests; its default requirements remain 8 GiB RAM and 100 GiB free disk.
 - The upstream watch has been run successfully using the strict completeness check. Its report artifact is saved for 30 days and identifies Chrome regular stable separately from Early Stable, avoiding a false comparison against limited-rollout versions.
 - The base-option note compares upstream Chromium, both Cromite source repositories, and GeckoView: docs/CHROMIUM_BASE_OPTIONS.md.
@@ -120,7 +121,9 @@ The public price table above is only a market comparison, not a guarantee that t
 - [ ] Run bash scripts/check-chromium-build-host.sh on the candidate Linux host before any source download.
 - [ ] Review the current build script against upstream instructions immediately before running it.
 - [ ] Complete the first upstream Chromium build.
-- [ ] Install and smoke-test the APK.
+- [ ] Run scripts/verify-chromium-apk.sh on the built artifact.
+- [ ] Run scripts/smoke-test-chromium-device.sh --serial DEVICE_SERIAL for no-install device compatibility checks.
+- [ ] Only after reviewing the device serial, run the smoke-test script with --install to install and launch; then visually verify page rendering.
 - [ ] Record upstream revision and checksum.
 - [ ] Review the [latest upstream-watch report](https://github.com/MvMSOLO/mvmbrowser/actions/workflows/chromium-upstream-watch.yml) regularly and verify the source version/security fixes, not only major-version numbers.
 - [ ] Estimate ongoing build/storage cost only after selecting a specific host and region.
