@@ -75,6 +75,12 @@ fi
 
 echo "==> Checking Docker daemon"
 docker info >/dev/null
+echo "==> Checking that the pinned build-image tag exists before downloading it"
+if ! docker manifest inspect "$IMAGE" >/dev/null 2>&1; then
+  echo "ERROR: the pinned Cromite build image is not currently available from the registry." >&2
+  echo "No image pull or compilation was started. Recheck the upstream release build-image reference." >&2
+  exit 1
+fi
 echo "==> Pulling pinned official Cromite build image"
 docker pull "$IMAGE"
 
