@@ -86,6 +86,53 @@ jobs:
       - name: Verify APK provenance, package metadata and signature
         run: bash scripts/verify-chromium-apk.sh
 
+      - name: Match artifact provenance against requested source pins
+        shell: bash
+        run: |
+          BUILD_ROOT="${CHROMIUM_ROOT:-$HOME/chromium-mvm}"
+          META="$BUILD_ROOT/MVM-Chromium-arm64.metadata.txt"
+          test -s "$META"
+          value() { sed -n "s/^$1=//p" "$META" | head -n 1; }
+
+          expected_chromium="$(printf '%s' "$CHROMIUM_REVISION" | tr '[:upper:]' '[:lower:]')"
+          expected_tools="$(printf '%s' "$DEPOT_TOOLS_REVISION" | tr '[:upper:]' '[:lower:]')"
+          actual_chromium="$(value chromium_revision | tr '[:upper:]' '[:lower:]')"
+          actual_tools="$(value depot_tools_revision | tr '[:upper:]' '[:lower:]')"
+
+          [[ "$actual_chromium" == "$expected_chromium" ]] || {
+            echo "Metadata Chromium revision does not match the requested commit." >&2
+            exit 1
+          }
+          [[ "$actual_tools" == "$expected_tools" ]] || {
+            echo "Metadata depot_tools revision does not match the requested commit." >&2
+            exit 1
+          }
+          [[ "$(value depot_tools_auto_update)" == "0" ]] || {
+            echo "Pinned depot_tools build must have auto-update disabled." >&2
+            exit 1
+          }
+          [[ "$(value chromium_source_tree_clean)" == "true" ]] || {
+            echo "Metadata does not certify a clean Chromium source checkout." >&2
+            exit 1
+          }
+          [[ "$(value target_os)" == "android" && "$(value target_cpu)" == "arm64" ]] || {
+            echo "Metadata target does not match android/arm64." >&2
+            exit 1
+          }
+          [[ "$(value chromium_version)" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "Metadata Chromium version is missing or malformed." >&2
+            exit 1
+          }
+          [[ "$(value apk_sha256)" =~ ^[0-9a-fA-F]{64}$ ]] || {
+            echo "Metadata APK checksum is missing or malformed." >&2
+            exit 1
+          }
+          [[ "$(value gn_args_sha256)" =~ ^[0-9a-fA-F]{64}$ ]] || {
+            echo "Metadata GN args checksum is missing or malformed." >&2
+            exit 1
+          }
+          echo "Requested source pins match the built artifact's provenance."
+
       - name: Summarize verified build provenance
         shell: bash
         run: |
