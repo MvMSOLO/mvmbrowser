@@ -54,6 +54,8 @@ class MainActivity : Activity() {
     private lateinit var progress: ProgressBar
     private lateinit var webHost: FrameLayout
     private lateinit var tabsButton: TextView
+    private lateinit var adBlockButton: TextView
+    @Volatile private var adBlockingEnabled = true
     private val tabs = mutableListOf<BrowserTab>()
     private var activeIndex = 0
     private val prefs by lazy { getSharedPreferences("mvm-browser", Context.MODE_PRIVATE) }
@@ -71,6 +73,7 @@ class MainActivity : Activity() {
         window.statusBarColor = bg
         window.navigationBarColor = bg
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+        adBlockingEnabled = prefs.getBoolean("ad_blocking_enabled", true)
         buildUi()
         newTab()
     }
@@ -98,12 +101,14 @@ class MainActivity : Activity() {
         val spacer = View(this)
         val backButton = action("‹") { goBack() }.apply { textSize = 24f; setPadding(dp(11), dp(3), dp(11), dp(3)) }
         val homeButton = action("⌂") { home() }.apply { textSize = 19f; setPadding(dp(10), dp(6), dp(10), dp(6)) }
+        adBlockButton = action(if (adBlockingEnabled) "SHIELD ON" else "SHIELD OFF") { toggleAdBlocking() }.apply { textSize = 9f }
         tabsButton = action("TABS 1") { showTabs() }.apply { textSize = 10f }
         brandRow.addView(logo)
         brandRow.addView(title)
         brandRow.addView(spacer, LinearLayout.LayoutParams(0, 1, 1f))
         brandRow.addView(backButton)
         brandRow.addView(homeButton)
+        brandRow.addView(adBlockButton)
         brandRow.addView(tabsButton)
         root.addView(brandRow)
 
@@ -187,6 +192,23 @@ class MainActivity : Activity() {
         // Expose the native bridge only while the bundled MVM home screen is active.
         web.addJavascriptInterface(BrowserBridge(), "BrowserBridge")
         web.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): android.webkit.WebResourceResponse? {
+                // Keep the callback fast: rules are preloaded in memory and no network or disk I/O runs here.
+                if (!adBlockingEnabled || request.isForMainFrame) return null
+                val uri = request.url
+                val scheme = uri.scheme?.lowercase()
+                if (scheme != "http" && scheme != "https") return null
+                if (!AdBlocker.shouldBlock(uri.host)) return null
+                return android.webkit.WebResourceResponse(
+                    "text/plain",
+                    "UTF-8",
+                    204,
+                    "No Content",
+                    emptyMap(),
+                    java.io.ByteArrayInputStream(ByteArray(0))
+                )
+            }
+
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 val scheme = uri.scheme?.lowercase()
@@ -268,6 +290,14 @@ class MainActivity : Activity() {
                 toast("Could not start download")
             }
         }
+    }
+
+    private fun toggleAdBlocking() {
+        adBlockingEnabled = !adBlockingEnabled
+        prefs.edit().putBoolean("ad_blocking_enabled", adBlockingEnabled).apply()
+        adBlockButton.text = if (adBlockingEnabled) "SHIELD ON" else "SHIELD OFF"
+        toast(if (adBlockingEnabled) "Ad and tracker filtering enabled" else "Ad and tracker filtering paused")
+        active()?.web?.reload()
     }
 
     private fun tabFor(web: WebView): BrowserTab? = tabs.firstOrNull { it.web === web }
