@@ -22,6 +22,7 @@ If that link is not available yet, open [Releases](https://github.com/MvMSOLO/mv
 MVM Browser is not yet running a bundled Chromium engine. Review the research docs before choosing the next architecture:
 
 - [Engine migration plan](docs/CHROMIUM_ENGINE_MIGRATION.md) — architecture and first proof-build steps.
+- [Feature port matrix](docs/CHROMIUM_FEATURE_PORT_MATRIX.md) — maps the current Kotlin/WebView features to the downstream Chromium shell and their acceptance checks.
 - [Engine/resource research](docs/ENGINE_RESOURCE_RESEARCH.md) — host requirements, cloud-account constraints, and public pricing comparisons.
 - [Chromium base options](docs/CHROMIUM_BASE_OPTIONS.md) — upstream Chromium, Cromite source forks, and GeckoView, including version, maintenance, and licensing caveats.
 - [Distribution/security checklist](docs/CHROMIUM_DISTRIBUTION_CHECKLIST.md) — notices, source provenance, and update responsibilities.
