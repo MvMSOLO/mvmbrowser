@@ -8,6 +8,11 @@ import java.io.IOException
  * offline-pages directory. Canonical paths prevent traversal and symlink escapes.
  */
 internal object LocalFilePolicy {
+    fun isAllowedBundledAssetPath(path: String): Boolean {
+        if (!path.startsWith("/android_asset/")) return false
+        return path.split('/').none { it == "." || it == ".." }
+    }
+
     fun isAllowedOfflineArchive(filePath: String, savedDirectoryPath: String): Boolean {
         return try {
             val directory = File(savedDirectoryPath).canonicalFile
