@@ -13,6 +13,7 @@ import datetime as dt
 import html
 import json
 import re
+import sys
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -208,6 +209,18 @@ def utc_now() -> str:
     return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
 
+def strict_report_problems(report: str) -> list[str]:
+    """Return critical data-quality failures for scheduled monitoring."""
+    problems: list[str] = []
+    if "## Data-source warnings" in report:
+        problems.append("one or more public metadata sources could not be read")
+    if "A version comparison could not be calculated" in report:
+        problems.append("the Chrome-vs-Cromite version comparison could not be calculated")
+    if "**Version:** version not parsed" in report:
+        problems.append("the Chrome Android release version could not be parsed")
+    return problems
+
+
 def render_report() -> str:
     lines = [
         "# MVM Browser — Chromium upstream status",
@@ -342,9 +355,15 @@ def main() -> int:
         default="chromium-upstream-status.md",
         help="Path for the generated Markdown report (default: chromium-upstream-status.md).",
     )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Return a non-zero exit code if critical public source data is incomplete.",
+    )
     args = parser.parse_args()
 
     report = render_report()
+    problems = strict_report_problems(report)
     output = Path(args.output)
     output.write_text(report, encoding="utf-8")
     print(report, end="")
@@ -356,6 +375,11 @@ def main() -> int:
             summary.write("\n")
 
     print(f"\nReport saved to: {output.resolve()}")
+    if args.strict and problems:
+        print("STRICT CHECK FAILED: " + "; ".join(problems), file=sys.stderr)
+        return 1
+    if args.strict:
+        print("STRICT CHECK PASSED: required Chrome and Cromite version data is available.")
     return 0
 
 
