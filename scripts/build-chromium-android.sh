@@ -10,6 +10,7 @@ set -Eeuo pipefail
 # Optional:
 #   CHROMIUM_ROOT="$HOME/chromium-mvm" DEPOT_TOOLS="$HOME/depot_tools" bash scripts/build-chromium-android.sh
 #   CHROMIUM_REVISION=<commit-or-ref> bash scripts/build-chromium-android.sh
+#   DEPOT_TOOLS_REVISION=<commit-or-ref> CHROMIUM_REVISION=<commit-or-ref> bash scripts/build-chromium-android.sh
 
 CHROMIUM_ROOT="${CHROMIUM_ROOT:-$HOME/chromium-mvm}"
 DEPOT_TOOLS="${DEPOT_TOOLS:-$HOME/depot_tools}"
