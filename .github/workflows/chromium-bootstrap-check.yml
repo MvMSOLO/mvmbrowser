@@ -54,6 +54,10 @@ jobs:
           grep -Fq 'ALLOW_UNKNOWN_MEMORY=1' scripts/build-chromium-android.sh
           grep -Fq 'CHROMIUM_REVISION contains unsupported characters' scripts/build-chromium-android.sh
           grep -Fq 'CHROMIUM_REVISION=' scripts/build-chromium-android.sh
+          grep -Fq 'DEPOT_TOOLS_REVISION=' scripts/build-chromium-android.sh
+          grep -Fq 'DEPOT_TOOLS_REVISION contains unsupported characters' scripts/build-chromium-android.sh
+          grep -Fq 'DEPOT_TOOLS_UPDATE must be set to 0 or 1' scripts/build-chromium-android.sh
+          grep -Fq 'depot_tools_auto_update=$DEPOT_TOOLS_UPDATE' scripts/build-chromium-android.sh
           grep -Fq 'FETCH_HEAD^{commit}' scripts/build-chromium-android.sh
           grep -Fq 'MVM-Chromium-arm64.metadata.txt' scripts/build-chromium-android.sh
           grep -Fq 'MVM-Chromium-arm64.args.gn' scripts/build-chromium-android.sh
@@ -64,7 +68,6 @@ jobs:
           grep -Fq '/sys/fs/cgroup/memory.max' scripts/check-chromium-build-host.sh
           grep -Fq 'chrome_public_apk' scripts/build-chromium-android.sh
           grep -Fq 'APK_SHA256=' scripts/build-chromium-android.sh
-          grep -Fq 'depot_tools revision:' scripts/build-chromium-android.sh
           grep -Fq 'depot_tools revision:' scripts/build-chromium-android.sh
           grep -Fq 'install-build-deps.sh --no-prompt' scripts/build-chromium-android.sh
           grep -Fq 'sudo -n true' scripts/build-chromium-android.sh
@@ -118,6 +121,22 @@ jobs:
             exit 1
           fi
           grep -Fq 'CHROMIUM_REVISION contains unsupported characters' invalid-revision.txt
+
+          if DEPOT_TOOLS_REVISION='--help' \
+            CHROMIUM_ROOT="$RUNNER_TEMP/mvm-invalid-tools-revision" \
+            bash scripts/build-chromium-android.sh > invalid-tools-revision.txt 2>&1; then
+            echo "Expected an option-like depot_tools revision to be rejected." >&2
+            exit 1
+          fi
+          grep -Fq 'DEPOT_TOOLS_REVISION contains unsupported characters' invalid-tools-revision.txt
+
+          if DEPOT_TOOLS_UPDATE=yes \
+            CHROMIUM_ROOT="$RUNNER_TEMP/mvm-invalid-tools-update" \
+            bash scripts/build-chromium-android.sh > invalid-tools-update.txt 2>&1; then
+            echo "Expected invalid depot_tools auto-update setting to be rejected." >&2
+            exit 1
+          fi
+          grep -Fq 'DEPOT_TOOLS_UPDATE must be set to 0 or 1' invalid-tools-update.txt
 
           spaced_root="$RUNNER_TEMP/mvm chromium invalid path"
           if CHROMIUM_ROOT="$spaced_root" \
