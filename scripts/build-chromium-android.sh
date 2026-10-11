@@ -192,24 +192,7 @@ if [[ -n "$CHROMIUM_REVISION" ]]; then
 fi
 
 VERSION_FILE="$SRC_DIR/chrome/VERSION"
-if [[ ! -r "$VERSION_FILE" ]]; then
-  echo "ERROR: Chromium version file is missing: $VERSION_FILE" >&2
-  exit 2
-fi
-version_field() {
-  awk -F'= *' -v field="$1" '$1 == field {gsub(/[[:space:]]/, "", $2); print $2; exit}' "$VERSION_FILE"
-}
-CHROMIUM_MAJOR="$(version_field MAJOR)"
-CHROMIUM_MINOR="$(version_field MINOR)"
-CHROMIUM_BUILD="$(version_field BUILD)"
-CHROMIUM_PATCH="$(version_field PATCH)"
-for version_part in "$CHROMIUM_MAJOR" "$CHROMIUM_MINOR" "$CHROMIUM_BUILD" "$CHROMIUM_PATCH"; do
-  if ! [[ "$version_part" =~ ^[0-9]+$ ]]; then
-    echo "ERROR: Chromium chrome/VERSION has a missing or invalid version component." >&2
-    exit 2
-  fi
-done
-CHROMIUM_VERSION="$CHROMIUM_MAJOR.$CHROMIUM_MINOR.$CHROMIUM_BUILD.$CHROMIUM_PATCH"
+CHROMIUM_VERSION="$(bash "$SCRIPT_DIR/read-chromium-version.sh" "$VERSION_FILE")"
 echo "Pinned Chromium version: $CHROMIUM_VERSION"
 
 # Never label a build with only HEAD if local tracked or untracked changes
