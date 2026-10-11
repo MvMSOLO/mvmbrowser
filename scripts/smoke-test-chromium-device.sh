@@ -69,7 +69,12 @@ if [[ -z "$ADB" ]]; then
     fail "adb was not found; add Android platform-tools to PATH or set ADB."
   fi
 fi
-[[ -x "$ADB" ]] || fail "ADB is not executable: $ADB"
+if [[ "$ADB" == */* ]]; then
+  [[ -x "$ADB" ]] || fail "ADB is not executable: $ADB"
+else
+  command -v "$ADB" >/dev/null 2>&1 || fail "ADB command was not found: $ADB"
+  ADB="$(command -v "$ADB")"
+fi
 [[ -x "$WRAPPER" ]] || fail "Chromium's generated chrome_public_apk wrapper is missing: $WRAPPER"
 
 DEVICE_OUTPUT="$("$ADB" devices)"
@@ -81,9 +86,9 @@ if [[ -n "$SERIAL" ]]; then
     [[ "$item" == "$SERIAL" ]] && found=1
   done
   (( found == 1 )) || fail "Selected serial '$SERIAL' is not an authorized online device. Check adb devices."
-elif (("${#ONLINE_SERIALS[@]}" == 1)); then
+elif ((${#ONLINE_SERIALS[@]} == 1)); then
   SERIAL="${ONLINE_SERIALS[0]}"
-elif (("${#ONLINE_SERIALS[@]}" == 0)); then
+elif ((${#ONLINE_SERIALS[@]} == 0)); then
   fail "No authorized Android device is connected. Enable USB debugging and accept the device prompt, or start an Android emulator."
 else
   printf 'Connected devices:\n' >&2
