@@ -16,6 +16,7 @@ on:
       - '.github/workflows/chromium-build-script-check.yml'
       - '.github/workflows/chromium-upstream-watch.yml'
       - '.github/workflows/chromium-bootstrap-check.yml'
+      - '.github/workflows/android-apk-release.yml'
       - '.github/workflows/chromium-self-hosted-build.yml'
   pull_request:
     paths:
@@ -31,6 +32,7 @@ on:
       - '.github/workflows/chromium-build-script-check.yml'
       - '.github/workflows/chromium-upstream-watch.yml'
       - '.github/workflows/chromium-bootstrap-check.yml'
+      - '.github/workflows/android-apk-release.yml'
       - '.github/workflows/chromium-self-hosted-build.yml'
 
 permissions:
@@ -167,6 +169,9 @@ jobs:
           grep -Fq 'sudo -n true' scripts/build-chromium-android.sh
           grep -Fq 'exists but is not a depot_tools' scripts/build-chromium-android.sh
           grep -Fq 'gclient sync --nohooks' scripts/build-chromium-android.sh
+          grep -Fq 'RELEASE_APK="MVM-Browser.apk"' .github/workflows/android-apk-release.yml
+          grep -Fq 'gh release create "$TAG" "$RELEASE_APK"' .github/workflows/android-apk-release.yml
+          grep -Fq 'sha256sum "$RELEASE_APK"' .github/workflows/android-apk-release.yml
           ruby -e 'require "yaml"; YAML.load_file(".github/workflows/chromium-self-hosted-build.yml", aliases: true)'
           grep -Fq 'workflow_dispatch:' .github/workflows/chromium-self-hosted-build.yml
           grep -Fq 'default: "no"' .github/workflows/chromium-self-hosted-build.yml
