@@ -178,6 +178,11 @@ jobs:
           grep -Fq 'GITHUB_STEP_SUMMARY' .github/workflows/chromium-self-hosted-build.yml
           grep -Fq 'depot_tools_auto_update' .github/workflows/chromium-self-hosted-build.yml
           grep -Fq 'MVM-Chromium-arm64.metadata.txt' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'Match artifact provenance against requested source pins' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'Metadata Chromium revision does not match' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'Metadata depot_tools revision does not match' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'Pinned depot_tools build must have auto-update disabled' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'Metadata does not certify a clean Chromium source checkout' .github/workflows/chromium-self-hosted-build.yml
           if grep -Eq '^  (push|pull_request|schedule):' .github/workflows/chromium-self-hosted-build.yml; then
             echo "The expensive Chromium build workflow must be manual-dispatch only." >&2
             exit 1
