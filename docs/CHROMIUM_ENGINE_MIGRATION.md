@@ -41,7 +41,7 @@ bash scripts/check-chromium-source-clean.sh "$HOME/chromium-mvm/src"
 CHROMIUM_REVISION=<commit-or-ref> DEPOT_TOOLS_REVISION=<commit-or-ref> bash scripts/build-chromium-android.sh
 ```
 
-At completion, the script reports the actual Chromium commit, `depot_tools` commit, GN-args SHA-256, and APK SHA-256. It also writes `MVM-Chromium-arm64.metadata.txt` and copies the effective GN args to `MVM-Chromium-arm64.args.gn` next to the APK. When `CHROMIUM_REVISION` is supplied, the script resolves it to an exact commit (using `FETCH_HEAD` for remotely fetched refs) before syncing dependencies. When `DEPOT_TOOLS_REVISION` is supplied, it does the same for `depot_tools` and records whether automatic tool updates were disabled. Save the APK, metadata, GN args file, and build logs together when comparing repeat builds.
+At completion, the script reports the Chromium four-part version from chrome/VERSION, actual Chromium commit, `depot_tools` commit, GN-args SHA-256, and APK SHA-256. The offline verifier requires a valid MAJOR.MINOR.BUILD.PATCH value in the metadata. It also writes `MVM-Chromium-arm64.metadata.txt` and copies the effective GN args to `MVM-Chromium-arm64.args.gn` next to the APK. When `CHROMIUM_REVISION` is supplied, the script resolves it to an exact commit (using `FETCH_HEAD` for remotely fetched refs) before syncing dependencies. When `DEPOT_TOOLS_REVISION` is supplied, it does the same for `depot_tools` and records whether automatic tool updates were disabled. Save the APK, metadata, GN args file, and build logs together when comparing repeat builds.
 
 Before any installation attempt, run the offline verifier against the output:
 
