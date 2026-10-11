@@ -33,11 +33,61 @@ footer{display:flex;justify-content:space-between;gap:12px;align-items:center;bo
 @media(min-width:650px){main{padding:26px 30px 48px}.hero{padding-top:48px}.cards{grid-template-columns:repeat(4,minmax(0,1fr))}.card{min-height:154px}}
 @media(max-width:380px){main{padding-left:14px;padding-right:14px}.search-shell{gap:5px}.search-icon{width:30px;flex-basis:30px}.go{padding:0 13px}.card{padding:13px;min-height:124px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+ 
+/* MVM GX layer — performance-aware motion, reactive light and tactile surfaces */
+:root{--gx-red:#ff3158;--gx-glow:#ff31584d;--gx-violet:#b58aff}
+body{background:radial-gradient(ellipse at 18% 5%,#122c69 0,transparent 36%),radial-gradient(ellipse at 84% 22%,#35122f 0,transparent 35%),linear-gradient(145deg,#05060b,#080a12 48%,#090713)}
+body:after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:linear-gradient(120deg,transparent 15%,#ff315807 48%,#53eaff07 70%,transparent 90%);background-size:220% 220%;animation:gxFlow 18s ease-in-out infinite}
+main{z-index:1}
+.eyebrow{justify-content:space-between;gap:12px;letter-spacing:.16em}
+.eyebrow .status-left{display:flex;align-items:center;gap:8px}
+.control-trigger{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid #633044;border-radius:10px;background:linear-gradient(135deg,#25101a,#11111b);color:#ff8aa0;font-size:9px;font-weight:900;letter-spacing:.12em;white-space:nowrap}
+.control-trigger:before{content:"";width:6px;height:6px;background:var(--gx-red);border-radius:50%;box-shadow:0 0 12px var(--gx-red)}
+.orb{border-color:#ff527577;background:linear-gradient(145deg,#381827e8,#10121fe8);box-shadow:0 0 0 8px #ff315808,0 0 54px #ff315826,0 0 90px #5869ff10,inset 0 0 28px #ff31580d}
+.orb:before{border-color:#ff527740}.orb:after{border-color:#8894ff27}
+.mark{color:#ff6a8b;text-shadow:0 0 26px #ff3158a0}
+h1 span{background:linear-gradient(100deg,#fff 3%,#ff6689 39%,#8a9aff 76%,#5deeff);-webkit-background-clip:text;background-clip:text}
+.search-shell{border-color:#ff4c6c65;background:linear-gradient(120deg,#21121ef5,#0b111ff5);box-shadow:0 0 0 5px #ff315808,0 14px 50px #0009,0 0 35px #ff315812}
+.search-shell:focus-within{border-color:#ff6688;box-shadow:0 0 0 5px #ff315815,0 14px 50px #0009,0 0 40px #ff315825}
+.search-icon{color:#ff6889}
+.go{background:linear-gradient(125deg,#ff456b,#ff8b9e 48%,#9b9cff);box-shadow:0 4px 24px #ff31582c}
+.chip{border-color:#3d2b43;background:linear-gradient(120deg,#17131fdd,#0d1420dd)}
+.chip:active{border-color:#ff6c89;color:#ff9bb0}
+.card{border-color:#2d2739;background:linear-gradient(145deg,#171523e8,#0b111de8);box-shadow:inset 0 1px #ffffff06,0 8px 28px #0002}
+.card:active{border-color:#ff6380}
+.card .symbol{background:#251522;border-color:#5a2a43}
+.result{border-color:#342738;background:linear-gradient(120deg,#191522ef,#0b111de8)}
+.result:active{border-color:#ff6380}
+.result .url{color:#ff8ca4}
+.section-head{position:relative}
+.micro{color:#a77d94}
+footer{border-color:#302337}
+.foot-brand{color:#ff8ba1}
+.gx-console{position:fixed;inset:0;z-index:20;display:flex;justify-content:flex-end;background:#020309a8;backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .25s}
+.gx-console.open{opacity:1;pointer-events:auto}
+.gx-drawer{width:min(340px,88vw);height:100%;overflow:auto;padding:22px 18px;background:linear-gradient(155deg,#171321,#0a0b12 70%);border-left:1px solid #743047;box-shadow:-24px 0 80px #0009;transform:translateX(25px);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+.gx-console.open .gx-drawer{transform:translateX(0)}
+.gx-drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px}
+.gx-drawer-head strong{font-size:13px;letter-spacing:.16em;color:#ff7b97}
+.gx-close{border:1px solid #3c2937;background:#17121d;color:#d8c8d3;border-radius:9px;width:34px;height:34px;font-size:19px}
+.gx-module{border:1px solid #342639;border-radius:15px;padding:15px;margin:12px 0;background:linear-gradient(145deg,#1b1725,#0f111b)}
+.gx-module-title{font-size:11px;font-weight:900;letter-spacing:.12em;color:#e9dce7;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.gx-module p{color:#95869d;font-size:11px;line-height:1.6;margin:9px 0 0}
+.gx-toggle{width:39px;height:22px;border:1px solid #5a3b55;border-radius:999px;background:#2a1b2b;padding:3px;display:inline-flex;align-items:center;flex-shrink:0}
+.gx-toggle:after{content:"";width:14px;height:14px;border-radius:50%;background:#938095;transition:transform .2s,background .2s}
+.gx-toggle.on{background:#572137;border-color:#ff5c80}.gx-toggle.on:after{transform:translateX(16px);background:#ff8da5;box-shadow:0 0 10px #ff315866}
+.gx-meter{height:5px;border-radius:99px;background:#302637;overflow:hidden;margin-top:14px}.gx-meter span{display:block;height:100%;width:76%;background:linear-gradient(90deg,#ff3158,#a98aff);border-radius:99px}
+.gx-shortcut{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #342639;background:#11111b;color:#e9dce7;border-radius:11px;padding:12px;margin-top:9px;text-align:left;width:100%;font-size:11px}
+.gx-shortcut span:last-child{color:#ff819a;font-size:10px;font-weight:800}
+@keyframes gxFlow{0%,100%{background-position:0% 30%}50%{background-position:100% 70%}}
+@media(min-width:650px){main{max-width:1050px;padding-top:28px}.hero{padding-top:40px}.orb{width:94px;height:94px}.cards{gap:14px}.card{min-height:162px;padding:18px}}
+@media(prefers-reduced-motion:reduce){body:after{animation:none}}
+
 </style>
 </head>
 <body>
 <main>
-<div class="eyebrow"><i class="live"></i> MVM INTELLIGENCE · PRIVATE BROWSING SHELL</div>
+<div class="eyebrow"><span class="status-left"><i class="live"></i> MVM GX · NEXT-GEN BROWSING</span><button class="control-trigger" id="openConsole" type="button">MVM CONTROL</button></div>
 <section class="hero">
 <div class="orb"><div class="mark">M</div></div>
 <h1>Explore beyond.<br><span>Search without limits.</span></h1>
@@ -64,6 +114,16 @@ footer{display:flex;justify-content:space-between;gap:12px;align-items:center;bo
 <button class="card" data-query="NASA images and space discoveries" style="--tone:#b3a0ff;--glow:#9a78ff"><span class="symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-35 12 12)"/><path d="m19 4 1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/></svg></span><b>Space / Beyond</b><small>Discoveries from our universe and beyond.</small></button>
 </div>
 </section>
+<div class="gx-console" id="gxConsole" aria-hidden="true">
+ <aside class="gx-drawer" role="dialog" aria-modal="true" aria-label="MVM GX Control">
+  <div class="gx-drawer-head"><strong>◉ MVM GX CONTROL</strong><button class="gx-close" id="closeConsole" aria-label="Close control panel">×</button></div>
+  <div class="gx-module"><div class="gx-module-title">MOTION ENGINE <button class="gx-toggle on" id="motionToggle" aria-label="Toggle animations" aria-pressed="true"></button></div><p>Reactive glow, ambient motion and tactile transitions. Switch off to reduce visual motion.</p><div class="gx-meter"><span></span></div></div>
+  <div class="gx-module"><div class="gx-module-title">SPATIAL SOUND FX <button class="gx-toggle on" id="soundToggle" aria-label="Toggle sound effects" aria-pressed="true"></button></div><p>Original synthesized UI tones. Sounds only play after you interact with the page; no audio files or background music.</p></div>
+  <div class="gx-module"><div class="gx-module-title">VISUAL PROFILE <span style="color:#ff819a">NEON / 01</span></div><p>Crimson highlights, ultraviolet depth and electric-cyan signal accents.</p></div>
+  <button class="gx-shortcut" id="consoleSearch"><span>⌕ &nbsp; Focus search field</span><span>GO ↗</span></button>
+  <button class="gx-shortcut" id="consoleHome"><span>⌂ &nbsp; Reset discovery page</span><span>RESET ↻</span></button>
+ </aside>
+</div>
 <footer><span><span class="foot-brand">MVM BROWSER</span><br>Built for curiosity. Designed for focus.</span><span>SEARCH · DISCOVER · EXPLORE</span></footer>
 </main>
 <script>
@@ -80,6 +140,38 @@ footer{display:flex;justify-content:space-between;gap:12px;align-items:center;bo
    count.textContent=items.length+' RESULTS';list.innerHTML=items.map((r,i)=>'<button class="result" data-result="'+i+'"><div class="url">'+escapeHtml(r.displayUrl||r.url)+'</div><h3>'+escapeHtml(r.title)+'</h3><p>'+escapeHtml(r.snippet||'Open this result to explore more.')+'</p></button>').join('');
    list.querySelectorAll('[data-result]').forEach(el=>el.addEventListener('click',()=>{const r=items[Number(el.dataset.result)];if(r&&window.BrowserBridge)BrowserBridge.openUrl(r.url);}));
  };
+
+ // MVM GX interaction layer: optional synthesized micro-sounds, no bundled media.
+ const consoleLayer=document.getElementById('gxConsole'), openConsole=document.getElementById('openConsole');
+ const soundToggle=document.getElementById('soundToggle'), motionToggle=document.getElementById('motionToggle');
+ let soundEnabled=true, motionEnabled=true, audioContext=null, lastTone=0;
+ function tone(kind){
+   if(!soundEnabled||!window.AudioContext&&!window.webkitAudioContext)return;
+   const now=performance.now();if(now-lastTone<65)return;lastTone=now;
+   try{
+     const AC=window.AudioContext||window.webkitAudioContext;
+     if(!audioContext)audioContext=new AC();
+     if(audioContext.state==='suspended')audioContext.resume();
+     const t=audioContext.currentTime, osc=audioContext.createOscillator(), gain=audioContext.createGain();
+     const settings=kind==='search'?[520,760,.11]:kind==='open'?[390,590,.075]:[680,480,.045];
+     osc.type='sine';osc.frequency.setValueAtTime(settings[0],t);osc.frequency.exponentialRampToValueAtTime(settings[1],t+settings[2]);
+     gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(.035,t+.012);gain.gain.exponentialRampToValueAtTime(.0001,t+settings[2]);
+     osc.connect(gain);gain.connect(audioContext.destination);osc.start(t);osc.stop(t+settings[2]+.02);
+   }catch(_){}
+ }
+ function setToggle(el,on){el.classList.toggle('on',on);el.setAttribute('aria-pressed',String(on));}
+ function closeDrawer(){consoleLayer.classList.remove('open');consoleLayer.setAttribute('aria-hidden','true');}
+ openConsole.addEventListener('click',()=>{tone('open');consoleLayer.classList.add('open');consoleLayer.setAttribute('aria-hidden','false');});
+ document.getElementById('closeConsole').addEventListener('click',closeDrawer);
+ consoleLayer.addEventListener('click',e=>{if(e.target===consoleLayer)closeDrawer();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();input.focus();}});
+ soundToggle.addEventListener('click',()=>{soundEnabled=!soundEnabled;setToggle(soundToggle,soundEnabled);if(soundEnabled)tone('open');});
+ motionToggle.addEventListener('click',()=>{motionEnabled=!motionEnabled;setToggle(motionToggle,motionEnabled);document.documentElement.classList.toggle('motion-off',!motionEnabled);});
+ document.getElementById('consoleSearch').addEventListener('click',()=>{closeDrawer();input.focus();tone('tap');});
+ document.getElementById('consoleHome').addEventListener('click',()=>{closeDrawer();results.classList.remove('active');discover.classList.remove('hidden');input.value='';tone('tap');window.scrollTo({top:0,behavior:motionEnabled?'smooth':'auto'});});
+ document.querySelectorAll('button').forEach(el=>{if(!el.closest('.gx-console'))el.addEventListener('click',()=>tone(el.matches('.go')?'search':'tap'),{passive:true});});
+ const style=document.createElement('style');style.textContent='.motion-off *, .motion-off *:before, .motion-off *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}';document.head.appendChild(style);
+
 })();
 </script>
 </body></html>
