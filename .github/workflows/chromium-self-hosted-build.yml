@@ -86,6 +86,27 @@ jobs:
       - name: Verify APK provenance, package metadata and signature
         run: bash scripts/verify-chromium-apk.sh
 
+      - name: Summarize verified build provenance
+        shell: bash
+        run: |
+          BUILD_ROOT="${CHROMIUM_ROOT:-$HOME/chromium-mvm}"
+          META="$BUILD_ROOT/MVM-Chromium-arm64.metadata.txt"
+          value() { sed -n "s/^$1=//p" "$META" | head -n 1; }
+          {
+            echo "## Chromium Android proof build"
+            echo
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Chromium revision | $(value chromium_revision) |"
+            echo "| depot_tools revision | $(value depot_tools_revision) |"
+            echo "| depot_tools auto-update | $(value depot_tools_auto_update) |"
+            echo "| Target | $(value target_os) / $(value target_cpu) |"
+            echo "| APK SHA-256 | $(value apk_sha256) |"
+            echo "| GN args SHA-256 | $(value gn_args_sha256) |"
+            echo
+            echo "This is an unbranded proof build, not the finished MVM Browser."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Stage proof-build artifacts
         shell: bash
         run: |
