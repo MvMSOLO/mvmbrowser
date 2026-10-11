@@ -22,7 +22,7 @@ This note tracks realistic engine and build-resource options for moving MVM Brow
 
 1. **Chromium Android build guide**  
    https://chromium.googlesource.com/chromium/src/+/main/docs/android_build_instructions.md  
-   States that Android builds require an x86-64 Linux machine, at least 8 GB RAM (more than 16 GB highly recommended), and at least 100 GB free disk. The official build target includes chrome_public_apk; Windows/macOS are not supported for this build flow.
+   States that Android builds require an x86-64 Linux machine, at least 8 GB RAM (more than 16 GB highly recommended), and at least 100 GB free disk. The official chrome_public_apk target has minSdkVersion 29 (Android 10) for local development; Windows/macOS are not supported for this build flow.
 
 2. **Chromium Linux build guide**  
    https://github.com/chromium/chromium/blob/main/docs/linux/build_instructions.md  
@@ -61,7 +61,7 @@ Prices below are a research snapshot as of 2026-10-11, before taxes, optional st
 | Candidate | Published configuration | Published price | Assessment |
 | --- | --- | --- | --- |
 | DigitalOcean CPU-Optimized Droplet | 16 vCPU, 32 GiB RAM, 200 GiB SSD | $0.50/hour; $336/month cap shown in current price table | Best initial cloud candidate on price/spec balance, if the chosen region offers it. A 200-GiB disk leaves practical headroom beyond Chromium's 100-GB free-space minimum. |
-| GitHub Actions larger runner | 8 vCPU, 32 GB RAM, 300 GB SSD | Linux 8-core rate shown as $0.022/minute (about $1.32 per billed hour) | Convenient ephemeral CI worker, but confirm the account/repository can use paid larger runners. Build logs and timeouts need to be managed. |
+| GitHub Actions larger runner | 8 vCPU, 32 GB RAM, 300 GB SSD | Linux 8-core rate shown as $0.022/minute (about $1.32 per billed hour) | Convenient ephemeral CI worker, but GitHub documents these as available only to organizations/enterprises on Team or Enterprise Cloud; confirm eligibility before planning around them. Build logs and timeouts need to be managed. |
 | GitHub Actions larger runner | 16 vCPU, 64 GB RAM, 600 GB SSD | Linux 16-core rate shown as $0.042/minute (about $2.52 per billed hour) | More memory/disk headroom, but higher cost; requires an appropriate billing setup. |
 | Google Cloud Compute Engine | E2 high-memory machine family includes 8-vCPU/64-GB and other shapes | Region, disk, and network dependent; use the official calculator | Technically possible, but don't pick a machine or estimate a final bill until region and disk are selected. |
 
@@ -73,7 +73,7 @@ Official provider links:
 - Google Cloud machine families: https://docs.cloud.google.com/compute/docs/general-purpose-machines
 - Google Cloud pricing calculator/overview: https://cloud.google.com/products/compute
 
-Important: cloud build machines are paid resources. No instance has been launched and no billing-enabled account has been accessed. On DigitalOcean's published CPU-Optimized plan, the compute line item would be roughly $2 for four billed hours or $5 for ten billed hours at the listed $0.50/hour, but Chromium checkout/build duration is not yet known; do not treat these as total build-cost guarantees. Stop/destroy an ephemeral instance when finished and check for separately retained volumes, snapshots, or other billable resources.
+Important: cloud build machines are paid resources. No instance has been launched and no billing-enabled account has been accessed. DigitalOcean's terms say its services are not intended for users under 18 unless they have sufficient legal consent, permission, and capacity under applicable jurisdiction; account eligibility and any required adult/guardian involvement must be confirmed before using that provider. On DigitalOcean's published CPU-Optimized plan, the compute line item would be roughly $2 for four billed hours or $5 for ten billed hours at the listed $0.50/hour, but Chromium checkout/build duration is not yet known; do not treat these as total build-cost guarantees. Stop/destroy an ephemeral instance when finished and check for separately retained volumes, snapshots, or other billable resources.
 
 ## Recommended implementation sequence
 
@@ -88,6 +88,7 @@ Important: cloud build machines are paid resources. No instance has been launche
 
 - The current MVM Browser Android APK and Release APK CI workflows passed for commit fe9b9b3.
 - The current application still uses Android System WebView.
+- A lightweight CI workflow now checks Bash syntax and guardrails only; it deliberately does not attempt an expensive Chromium build.
 - The Chromium build script is present but has not been executed here. It now checks minimum RAM/disk before checkout and uses fetch --nohooks so dependencies are installed before Chromium hooks run.
 - A read-only host diagnostic is available at scripts/check-chromium-build-host.sh; it does not download or install anything.
 - Before any public distribution, review docs/CHROMIUM_DISTRIBUTION_CHECKLIST.md for branding, notices, security updates, and build provenance.
