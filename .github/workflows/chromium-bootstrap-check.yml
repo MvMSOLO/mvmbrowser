@@ -379,6 +379,11 @@ jobs:
           grep -Fq 'APK signature: verified by apksigner' verifier-pass.txt
           grep -Fq 'Signer certificate SHA-256: 0123456789abcdef' verifier-pass.txt
 
+          # Configured tool names should work when the tools are exposed via PATH.
+          PATH="$test_root:$PATH" AAPT=fake-aapt APKSIGNER=fake-apksigner \
+            bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-path-pass.txt
+          grep -Fq 'VERIFY PASSED' verifier-path-pass.txt
+
           if AAPT="$fake_aapt" APKSIGNER="$fake_apksigner" FAKE_APKSIGNER_FAIL=1 \
             bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-signature-fail.txt 2>&1; then
             echo "Expected the APK verifier to reject failed signature verification." >&2
