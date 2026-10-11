@@ -72,13 +72,15 @@ SDK_BUILD_TOOLS="${CHROMIUM_ROOT:-$HOME/chromium-mvm}/src/third_party/android_sd
 AAPT_BIN="${AAPT:-}"
 if [[ -z "$AAPT_BIN" ]] && command -v aapt >/dev/null 2>&1; then
   AAPT_BIN="$(command -v aapt)"
+elif [[ -n "$AAPT_BIN" && "$AAPT_BIN" != */* ]]; then
+  AAPT_BIN="$(command -v "$AAPT_BIN" 2>/dev/null || true)"
 fi
 if [[ -z "$AAPT_BIN" && -d "$SDK_BUILD_TOOLS" ]]; then
   AAPT_BIN="$(find "$SDK_BUILD_TOOLS" -type f -name aapt -perm -111 -print -quit)"
 fi
 
 if [[ -n "$AAPT_BIN" ]]; then
-  [[ -x "$AAPT_BIN" ]] || fail "AAPT is not executable: $AAPT_BIN"
+  [[ -x "$AAPT_BIN" ]] || fail "AAPT is not executable or was not found on PATH: $AAPT_BIN"
   BADGING="$("$AAPT_BIN" dump badging "$APK")" || fail "aapt could not read the APK binary manifest."
   PACKAGE_NAME="$(printf '%s\n' "$BADGING" | sed -n "s/^package: name='\([^']*\)'.*/\1/p" | head -n 1)"
   MIN_SDK="$(printf '%s\n' "$BADGING" | sed -n "s/^sdkVersion:'\([0-9][0-9]*\)'.*/\1/p" | head -n 1)"
@@ -96,12 +98,14 @@ fi
 APKSIGNER_BIN="${APKSIGNER:-}"
 if [[ -z "$APKSIGNER_BIN" ]] && command -v apksigner >/dev/null 2>&1; then
   APKSIGNER_BIN="$(command -v apksigner)"
+elif [[ -n "$APKSIGNER_BIN" && "$APKSIGNER_BIN" != */* ]]; then
+  APKSIGNER_BIN="$(command -v "$APKSIGNER_BIN" 2>/dev/null || true)"
 fi
 if [[ -z "$APKSIGNER_BIN" && -d "$SDK_BUILD_TOOLS" ]]; then
   APKSIGNER_BIN="$(find "$SDK_BUILD_TOOLS" -type f -name apksigner -perm -111 -print -quit)"
 fi
 if [[ -n "$APKSIGNER_BIN" ]]; then
-  [[ -x "$APKSIGNER_BIN" ]] || fail "apksigner is not executable: $APKSIGNER_BIN"
+  [[ -x "$APKSIGNER_BIN" ]] || fail "APKSIGNER is not executable or was not found on PATH: $APKSIGNER_BIN"
   SIGNATURE_REPORT="$("$APKSIGNER_BIN" verify --verbose --print-certs "$APK" 2>&1)" \
     || { printf '%s\n' "$SIGNATURE_REPORT" >&2; fail "APK signature verification failed."; }
   CERT_SHA="$(printf '%s\n' "$SIGNATURE_REPORT" | sed -n 's/.*certificate SHA-256 digest: *//p' | head -n 1)"
