@@ -307,7 +307,7 @@ class MainActivity : Activity() {
         val web = tabs[activeIndex].web
         (web.parent as? ViewGroup)?.removeView(web)
         webHost.addView(web, FrameLayout.LayoutParams(-1, -1))
-        address.setText(if (tabs[activeIndex].isBundledHomeUrl(url)) "" else tabs[activeIndex].url)
+        address.setText(if (isBundledHomeUrl(tabs[activeIndex].url)) "" else tabs[activeIndex].url)
         updateTabButton()
     }
 
