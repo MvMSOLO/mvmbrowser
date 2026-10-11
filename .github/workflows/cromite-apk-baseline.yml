@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   fetch-verify-apk:
-    name: Fetch and verify upstream ARM64 APK
+    name: Fetch and inspect upstream ARM64 APK
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -34,16 +34,34 @@ jobs:
           Release: v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a
           Asset: arm64_ChromePublic.apk
           SHA-256: 9db12af1af021f42b4371e76d0e9fe476a7085bbbbc76bc410a538d028bf6071
-          This is an upstream-signed/packaged upstream artifact, not an MVM-branded build.
-          It is a binary baseline for inspection only; verify signing, package ID, license notices and device compatibility before installation or redistribution.
+          This is an upstream artifact, not an MVM-branded build.
           EOF
           {
-            echo '### Upstream Cromite APK baseline verified'
+            echo '### Upstream Cromite APK baseline downloaded'
             echo '- SHA-256 matches the pinned official release asset.'
-            echo '- This is not an MVM Browser APK and has not been rebranded.'
+            echo '- Next step inspects package metadata and APK signing certificate.'
             echo '- No APK was committed to the Git repository.'
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload verified APK as a temporary artifact
+      - name: Inspect APK package metadata and signing certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk='verified-apk/arm64_ChromePublic.apk'
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          aapt_bin="$(find "$sdk_root/build-tools" -type f -name aapt 2>/dev/null | sort -V | tail -n 1 || true)"
+          apksigner_bin="$(find "$sdk_root/build-tools" -type f -name apksigner 2>/dev/null | sort -V | tail -n 1 || true)"
+          if [[ -z "$aapt_bin" || -z "$apksigner_bin" ]]; then
+            echo 'Android SDK build-tools (aapt and apksigner) not found on runner.' >&2
+            exit 1
+          fi
+          "$aapt_bin" dump badging "$apk" | tee verified-apk/package-metadata.txt | grep -E '^(package:|sdkVersion:|targetSdkVersion:|native-code:)' || true
+          "$apksigner_bin" verify --verbose --print-certs "$apk" 2>&1 | tee verified-apk/signature-metadata.txt
+          {
+            echo '### APK metadata inspection passed'
+            echo 'Package metadata and signature verification output are included in the artifact.'
+            echo 'This does not establish that the APK is an MVM build or that it is safe for all devices.'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload verified APK and inspection metadata
         uses: actions/upload-artifact@v4
         with:
           name: cromite-arm64-upstream-baseline
