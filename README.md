@@ -23,6 +23,12 @@ If that link is not available yet, open [Releases](https://github.com/MvMSOLO/mv
 
 Start with [Cromite fork execution plan](docs/CROMITE_FORK_EXECUTION_PLAN.md). The plan requires a pinned source revision, security/version review, a reproducible ARM64 build, license compliance, and an on-device smoke test before claiming success. No paid cloud infrastructure should be created without explicit approval.
 
+Implementation tools:
+- [Cromite baseline audit](docs/CROMITE_BASELINE_AUDIT.md) — version/security gate and upstream references.
+- [Cromite Android build procedure](docs/CROMITE_ANDROID_BUILD.md) — pinned ARM64 build image and requirements.
+- [Cromite ARM64 build script](scripts/build-cromite-android.sh) — dry-run by default; only pulls the large image and compiles with explicit `--execute`.
+- [Cromite release freshness checker](scripts/check-cromite-release.py) — compares a verified Chrome Stable baseline and can verify an APK checksum.
+
 Supporting research and tooling:
 
 - [Engine migration plan](docs/CHROMIUM_ENGINE_MIGRATION.md) — architecture and integration constraints.
