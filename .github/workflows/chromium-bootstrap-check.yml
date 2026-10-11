@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/build-chromium-android.sh'
       - 'scripts/check-chromium-build-host.sh'
+      - 'scripts/verify-chromium-apk.sh'
       - 'scripts/report-chromium-upstream-status.py'
       - 'tests/test_chromium_upstream_status.py'
       - '.github/workflows/chromium-build-script-check.yml'
@@ -15,6 +16,7 @@ on:
     paths:
       - 'scripts/build-chromium-android.sh'
       - 'scripts/check-chromium-build-host.sh'
+      - 'scripts/verify-chromium-apk.sh'
       - 'scripts/report-chromium-upstream-status.py'
       - 'tests/test_chromium_upstream_status.py'
       - '.github/workflows/chromium-build-script-check.yml'
@@ -36,6 +38,7 @@ jobs:
         run: |
           bash -n scripts/build-chromium-android.sh
           bash -n scripts/check-chromium-build-host.sh
+          bash -n scripts/verify-chromium-apk.sh
       - name: Validate and test upstream release report
         run: |
           python3 -m py_compile scripts/report-chromium-upstream-status.py
@@ -51,6 +54,8 @@ jobs:
           grep -Fq 'CHROMIUM_REVISION=' scripts/build-chromium-android.sh
           grep -Fq 'FETCH_HEAD^{commit}' scripts/build-chromium-android.sh
           grep -Fq 'MVM-Chromium-arm64.metadata.txt' scripts/build-chromium-android.sh
+          grep -Fq 'MVM-Chromium-arm64.args.gn' scripts/build-chromium-android.sh
+          grep -Fq 'GN args SHA-256:' scripts/build-chromium-android.sh
           grep -Fq 'GN_ARGS_SHA256=' scripts/build-chromium-android.sh
           grep -Fq '/sys/fs/cgroup/memory.max' scripts/build-chromium-android.sh
           grep -Fq '/sys/fs/cgroup/memory.max' scripts/check-chromium-build-host.sh
@@ -122,3 +127,51 @@ jobs:
             echo "Build script created an invalid workspace before rejecting its path." >&2
             exit 1
           fi
+
+      - name: Test offline Chromium APK provenance verifier
+        shell: bash
+        run: |
+          test_root="$RUNNER_TEMP/chromium-verifier-test"
+          mkdir -p "$test_root"
+          test_apk="$test_root/MVM-Chromium-arm64.apk"
+          test_args="$test_root/MVM-Chromium-arm64.args.gn"
+          test_metadata="$test_root/MVM-Chromium-arm64.metadata.txt"
+
+          cat > "$test_args" <<'GN_ARGS'
+          target_os = "android"
+          target_cpu = "arm64"
+          is_debug = false
+          GN_ARGS
+
+          python3 - "$test_apk" <<'PY'
+          import sys
+          import zipfile
+          with zipfile.ZipFile(sys.argv[1], "w", compression=zipfile.ZIP_DEFLATED) as archive:
+              archive.writestr("META-INF/test.txt", "synthetic verifier fixture")
+          PY
+
+          apk_sha="$(sha256sum "$test_apk" | awk '{print $1}')"
+          args_sha="$(sha256sum "$test_args" | awk '{print $1}')"
+          cat > "$test_metadata" <<METADATA
+          build_date_utc=2026-10-11T00:00:00Z
+          host_os=Ubuntu-test
+          host_arch=x86_64
+          chromium_revision=0123456789abcdef0123456789abcdef01234567
+          depot_tools_revision=abcdef0123456789abcdef0123456789abcdef01
+          target_os=android
+          target_cpu=arm64
+          gn_args_file=MVM-Chromium-arm64.args.gn
+          gn_args_sha256=$args_sha
+          apk_file=MVM-Chromium-arm64.apk
+          apk_sha256=$apk_sha
+          METADATA
+
+          bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-pass.txt
+          grep -Fq 'VERIFY PASSED' verifier-pass.txt
+
+          printf '\n# altered after build\n' >> "$test_args"
+          if bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-fail.txt 2>&1; then
+            echo "Expected modified GN args to fail checksum verification." >&2
+            exit 1
+          fi
+          grep -Fq 'GN args checksum does not match metadata' verifier-fail.txt
