@@ -33,6 +33,8 @@ What was verified:
 - It publishes full Android browser APK assets for ARM64 and other architectures, rather than only a WebView wrapper.
 - Its build documentation provides GN args/patch-list references and describes a ready-to-build Docker image per release.
 - The latest stable release returned by GitHub during this research was v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a, published 2026-09-15. Its arm64_ChromePublic.apk asset is about 309 MiB with published SHA-256 9db12af1af021f42b4371e76d0e9fe476a7085bbbbc76bc410a538d028bf6071.
+- The repository-level LICENSE is GNU GPL version 3. Before using it as the code base for a distributed MVM fork, review GPL-3.0 source-disclosure, notices, and modified-version requirements with an appropriate reviewer.
+- The examined upstream build workflow uses custom runner labels (ci/dev), Docker images, and mounted persistent storage. It is not a drop-in GitHub-hosted Actions workflow for a regular personal repository.
 
 Advantages:
 - Provides a working Chromium browser shell and a patch/release process to study.
@@ -41,9 +43,10 @@ Advantages:
 
 Trade-offs:
 - Its own README states Android support is Android 10 and above; this does not preserve MVM's current Android 7+ support target.
+- GPL-3.0 obligations may not fit every distribution or commercialization plan; do not adopt its code without assessing those obligations.
 - Its APK is around 309 MiB. It is a complete application package, not an Android library to embed inside the existing MVM Kotlin app.
 - Rebranding requires understanding and maintaining browser UI/source patches, update process, licensing and notices. Its extra privacy/ad-blocking patches create additional behavior to review.
-- The last stable release observed in this snapshot is dated 2026-09-15. A release being available does not itself prove it contains every latest Chromium security fix; check the upstream version and release history again before selecting it.
+- The last stable release observed in this snapshot is dated 2026-09-15 and is based on Chromium 153. Google published Chrome 155 stable for Android on 2026-10-06, and Chrome 156 was in an early Android rollout on 2026-10-07. Therefore, the observed Cromite binary is behind the current Chromium release line and should not be treated as a security-current production base without a fresh matching build and patch review.
 
 ## Candidate C — Mozilla GeckoView
 
@@ -73,3 +76,5 @@ GeckoView is a genuine embeddable browser engine, but it is Gecko, not Chromium.
 - Cromite repository and version/platform scope: https://github.com/uazo/cromite
 - Cromite build process: https://github.com/uazo/cromite/blob/master/docs/HOW_TO_BUILD.md
 - Exact release and assets: https://github.com/uazo/cromite/releases/tag/v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a
+- Current Chrome for Android release note (155 stable, 2026-10-06): https://chromereleases.googleblog.com/2026/10/chrome-for-android-update_01835271525.html
+- Current early Chrome Android 156 release note (2026-10-07): https://chromereleases.googleblog.com/2026/10/chrome-for-android-update_01286554645.html
