@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
 # Build the pinned upstream Cromite Android ARM64 APK in Cromite's published
 # build image, overriding only the Android package ID for MVM compatibility.
 # Safe by default: without --execute this prints the plan and does not pull/build.
@@ -12,6 +14,7 @@ set -Eeuo pipefail
 #   bash scripts/build-cromite-android.sh
 #   bash scripts/build-cromite-android.sh --execute
 #   OUTPUT_DIR="$PWD/artifacts/cromite" bash scripts/build-cromite-android.sh --execute
+#   ALLOW_STALE_PROTOTYPE=1 bash scripts/build-cromite-android.sh --execute
 
 readonly CROMITE_VERSION="153.0.8010.37"
 readonly CROMITE_SHA="11507ac1061b5ea227806f5e84db5a57df6ccf6a"
@@ -21,6 +24,11 @@ readonly EXPECTED_RELEASE_APK_SHA256="9db12af1af021f42b4371e76d0e9fe476a7085bbbb
 readonly MIN_FREE_GIB="${CROMITE_MIN_FREE_GIB:-150}"
 OUTPUT_DIR="${OUTPUT_DIR:-$PWD/artifacts/cromite}"
 EXECUTE=0
+ALLOW_STALE_PROTOTYPE="${ALLOW_STALE_PROTOTYPE:-0}"
+if [[ "$ALLOW_STALE_PROTOTYPE" != "0" && "$ALLOW_STALE_PROTOTYPE" != "1" ]]; then
+  echo "ERROR: ALLOW_STALE_PROTOTYPE must be 0 or 1." >&2
+  exit 2
+fi
 
 if [[ "${1:-}" == "--execute" && $# -eq 1 ]]; then
   EXECUTE=1
@@ -65,14 +73,27 @@ DRY RUN ONLY — nothing has been downloaded or built.
 To start the long-running build explicitly, rerun:
   $0 --execute
 
-This pulls the pinned public Cromite image and compiles its Android ARM64
-browser with MVM package ID $MVM_PACKAGE_NAME. App label, icons, settings UI,
-and start page remain upstream, so this is not a finished MVM Browser.
-The compiled APK will not match the official release APK checksum above;
+Before pulling the large build image, execution checks the current Chrome Android
+Stable/Early Stable baseline and requires this exact source version/commit to match
+the latest published Cromite release. An outdated security base is blocked by default.
+For isolated patch/build-pipeline testing only, explicitly opt in with:
+  ALLOW_STALE_PROTOTYPE=1 $0 --execute
+That override marks the result prototype-only; it is not approval for public release.
+
+This compiles the upstream Android ARM64 browser with MVM package ID $MVM_PACKAGE_NAME.
+App label, icons, settings UI, and start page remain upstream, so this is not a finished
+MVM Browser. The compiled APK will not match the official release APK checksum above;
 that checksum is for the separate upstream prebuilt release only.
 PLAN
   exit 0
 fi
+
+echo "==> Checking latest Cromite pin and Chrome Android release freshness"
+GATE_ARGS=(--pinned-version "$CROMITE_VERSION" --pinned-commit "$CROMITE_SHA")
+if [[ "$ALLOW_STALE_PROTOTYPE" == "1" ]]; then
+  GATE_ARGS+=(--allow-stale-prototype)
+fi
+python3 "$SCRIPT_DIR/check-cromite-release.py" "${GATE_ARGS[@]}"
 
 echo "==> Checking Docker daemon"
 docker info >/dev/null

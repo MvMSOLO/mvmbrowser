@@ -17,8 +17,8 @@ SPEC.loader.exec_module(AUDIT)
 SHA = "a" * 40
 
 
-def release(version="153.0.8010.37", digest=None):
-    version_tag = f"v{version}-{SHA}"
+def release(version="153.0.8010.37", digest=None, commit=SHA):
+    version_tag = f"v{version}-{commit}"
     return {
         "tag_name": version_tag,
         "published_at": "2026-09-15T11:51:14Z",
@@ -32,12 +32,17 @@ def release(version="153.0.8010.37", digest=None):
 
 
 class CromiteReleaseAuditTests(unittest.TestCase):
-    def run_main(self, args, payload):
+    def run_main(self, args, payload, baseline=None):
         output = io.StringIO()
-        with mock.patch.object(AUDIT, "get_release", return_value=payload), \
-             mock.patch.object(sys, "argv", ["check-cromite-release.py", *args]), \
-             contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
-            code = AUDIT.main()
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(mock.patch.object(AUDIT, "get_release", return_value=payload))
+            stack.enter_context(mock.patch.object(sys, "argv", ["check-cromite-release.py", *args]))
+            if baseline is not None:
+                stack.enter_context(
+                    mock.patch.object(AUDIT, "latest_chrome_android_baseline", return_value=baseline)
+                )
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                code = AUDIT.main()
         return code, output.getvalue()
 
     def test_version_tuple(self):
@@ -51,6 +56,48 @@ class CromiteReleaseAuditTests(unittest.TestCase):
         code, output = self.run_main(["--stable-version", "155.0.8059.39"], release())
         self.assertEqual(code, 2)
         self.assertIn("GATE BLOCKED", output)
+
+    def test_auto_baseline_uses_android_early_stable_when_newer(self):
+        payload = release(version="156.0.8078.25")
+        baseline = {
+            "version": "156.0.8078.25",
+            "channel": "early stable",
+            "date": "2026-10-07",
+            "url": "https://chromereleases.googleblog.com/example",
+        }
+        code, output = self.run_main([], payload, baseline=baseline)
+        self.assertEqual(code, 0)
+        self.assertIn("Chrome Android baseline: 156.0.8078.25", output)
+        self.assertIn("early stable", output)
+
+    def test_pinned_version_and_commit_must_match_latest_release(self):
+        code, output = self.run_main(
+            [
+                "--stable-version", "153.0.8010.37",
+                "--pinned-version", "153.0.8010.37",
+                "--pinned-commit", "b" * 40,
+            ],
+            release(),
+        )
+        self.assertEqual(code, 3)
+        self.assertIn("does not match the latest published release", output)
+
+    def test_requires_pinned_version_and_commit_together(self):
+        code, output = self.run_main(
+            ["--stable-version", "153.0.8010.37", "--pinned-version", "153.0.8010.37"],
+            release(),
+        )
+        self.assertEqual(code, 1)
+        self.assertIn("must be supplied together", output)
+
+    def test_stale_release_can_only_pass_with_explicit_prototype_override(self):
+        code, output = self.run_main(
+            ["--stable-version", "155.0.8059.39", "--allow-stale-prototype"],
+            release(),
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("PROTOTYPE ONLY OVERRIDE", output)
+        self.assertIn("Public release remains blocked", output)
 
     def test_passes_equal_version_and_checks_apk_digest(self):
         content = b"sample APK bytes for checksum test"

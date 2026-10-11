@@ -27,7 +27,7 @@ Implementation tools:
 - [Cromite baseline audit](docs/CROMITE_BASELINE_AUDIT.md) — version/security gate and upstream references.
 - [Cromite Android build procedure](docs/CROMITE_ANDROID_BUILD.md) — pinned ARM64 build image and requirements.
 - [Cromite ARM64 build script](scripts/build-cromite-android.sh) — dry-run by default; only pulls the large image and compiles with explicit `--execute`.
-- [Cromite release freshness checker](scripts/check-cromite-release.py) — compares a verified Chrome Stable baseline and can verify an APK checksum.
+- [Cromite release freshness checker](scripts/check-cromite-release.py) — auto-detects the highest announced Chrome Android Stable/Early Stable version, verifies the configured source pin against the latest Cromite release, and can verify an APK checksum. Stale bases block builds by default.
 
 Supporting research and tooling:
 

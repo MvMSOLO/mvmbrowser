@@ -11,8 +11,8 @@
 - ARM64 APK: [arm64_ChromePublic.apk](https://github.com/uazo/cromite/releases/download/v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a/arm64_ChromePublic.apk)
 - Published APK size: 323,809,949 bytes
 - Published SHA-256: `9db12af1af021f42b4371e76d0e9fe476a7085bbbbc76bc410a538d028bf6071`
-- Official Chrome release information reported Chrome Stable 155.0.8059.39 on 2026-10-06: https://releases.sh/google/chrome-releases
-- Therefore the available Cromite release is two major versions behind that stable baseline. This comparison is a warning gate, not a complete CVE audit.
+- Official release notes reported Chrome Stable 155.0.8059.39 on 2026-10-06; Chrome for Android 156.0.8078.25 was then in an Early Stable rollout to a small percentage of users on 2026-10-07: https://chromereleases.googleblog.com/
+- The automated freshness gate conservatively compares Cromite against the highest version in the official Chrome Android Stable/Early Stable release feed. The published Cromite v153 release is behind both of these baselines. This version comparison is a warning gate, not a complete CVE audit.
 
 ## Build-image availability status (checked 2026-10-11)
 
@@ -32,13 +32,13 @@ The green upstream-watch workflow means its metadata queries and reporting succe
 
 ## Repeatable preflight
 
-Run from a Linux machine with Python 3:
+Run from a machine with Python 3 and network access. The script queries the latest Cromite release and automatically reads Google's official Chrome Android release feed, using the highest announced Stable/Early Stable version:
 
 ```bash
-python3 scripts/check-cromite-release.py --stable-version 155.0.8059.39
+python3 scripts/check-cromite-release.py
 ```
 
-The script queries the latest GitHub release and blocks when its Chromium version is older than the supplied stable baseline. The stable version must be independently checked against current official release notes before each run.
+For a deliberately pinned/manual baseline or offline fixture test, supply `--stable-version MAJOR.MINOR.BUILD.PATCH`. During a build, the wrapper also supplies `--pinned-version` and `--pinned-commit`, ensuring the configured source pin matches the latest published Cromite release. A stale source version blocks by default; `--allow-stale-prototype` is an explicit exception only for isolated prototype testing and does not authorize distribution.
 
 To verify an APK already downloaded from the official release:
 

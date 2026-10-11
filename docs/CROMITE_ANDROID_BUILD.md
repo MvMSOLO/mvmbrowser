@@ -9,6 +9,8 @@
 - Upstream build guide: https://github.com/uazo/cromite/blob/master/docs/HOW_TO_BUILD.md
 - Upstream build workflow: https://github.com/uazo/cromite/blob/master/.github/workflows/build_cromite.yaml
 
+Before `--execute`, `scripts/build-cromite-android.sh` queries the latest published Cromite release and Google's Chrome Android Stable/Early Stable release feed. It blocks unless the configured version/commit is exactly the latest Cromite release and its Chromium version is not behind the highest announced Android Stable/Early Stable baseline. The gate runs before Docker manifest inspection, image pull, or compilation; feed/API failures fail closed.
+
 The upstream guide says the build image includes a Chromium source checkout and that the Cromite patches are applied in the source-image preparation workflow. The MVM script deliberately uses that published build image rather than accidentally invoking our separate vanilla-Chromium builder.
 
 ## MVM package identity overlay
@@ -27,11 +29,18 @@ Before running `--execute`, recheck the exact pinned manifest and arrange an eli
 
 ## Safe execution
 
-The script defaults to a dry run. It does not pull an image or compile unless the user explicitly supplies `--execute`.
+The script defaults to a dry run. It does not pull an image or compile unless the user explicitly supplies `--execute`. Actual execution now has a mandatory source/version freshness gate. The currently pinned 153 release is behind the detected Chrome Android baseline, so a normal execution stops before pulling the image.
 
 ```bash
+# Safe dry run; no network pull or compilation.
 bash scripts/build-cromite-android.sh
+
+# Build only when the pinned Cromite source is current enough.
 bash scripts/build-cromite-android.sh --execute
+
+# Prototype-only exception for testing the patch/build pipeline against an older release.
+# This is not approved for public release or sensitive browsing.
+ALLOW_STALE_PROTOTYPE=1 bash scripts/build-cromite-android.sh --execute
 ```
 
 Requirements: x86-64 Linux, Docker Engine, network access, at least 150 GiB free disk (configurable with `CROMITE_MIN_FREE_GIB`), and 16 GiB RAM or more recommended. The full compile can take hours and may consume substantial disk and bandwidth. The script does not provision a cloud machine or start a paid service.
@@ -41,7 +50,7 @@ Output is written under `artifacts/cromite/` by default, or to `OUTPUT_DIR` if s
 ## Important release gates
 
 - The exact 153 Cromite build-image manifest was not verified by the 2026-10-11 upstream-watch run. This is a build blocker until a fresh manifest check succeeds; the green watch workflow means the metadata report worked, not that the image or APK build succeeded.
-- This pinned upstream Chromium base is 153.0.8010.37 and is behind the Chrome Stable baseline recorded in `CROMITE_BASELINE_AUDIT.md`. This is a reproducibility/prototype build, not an approval for sensitive browsing or public release.
+- This pinned upstream Chromium base is 153.0.8010.37 and is behind Chrome Android Stable/Early Stable as of the research snapshot. The build script blocks it by default; the explicit prototype override exists only for isolated patch/build checks and never marks the build release-ready.
 - The upstream APK hash only identifies the upstream release artifact. A locally built APK must have its own checksum; it will not be expected to match the upstream APK byte-for-byte.
 - Inspect signing with Android `apksigner` before installing. The script does not assume the upstream release signing key is available.
 - This build overrides only the Android package ID to `com.mvmsolo.mvmbrowser`. App label, icons, strings, settings UI, start page, signing, and MVM feature-porting remain incomplete; do not call it a finished MVM Browser.
