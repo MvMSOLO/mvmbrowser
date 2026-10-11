@@ -147,9 +147,16 @@ fi
 cd "$SRC_DIR"
 
 if [[ -n "$CHROMIUM_REVISION" ]]; then
-  echo "==> Fetching and pinning Chromium revision: $CHROMIUM_REVISION"
-  git fetch --no-tags origin "$CHROMIUM_REVISION"
-  git checkout --detach "$CHROMIUM_REVISION"
+  echo "==> Resolving and pinning Chromium revision: $CHROMIUM_REVISION"
+  # Reuse a commit already present in the checkout; otherwise fetch the
+  # requested branch, tag, or commit and resolve the fetched object explicitly.
+  if git rev-parse --verify --quiet "${CHROMIUM_REVISION}^{commit}" >/dev/null; then
+    PINNED_REVISION="$(git rev-parse --verify "${CHROMIUM_REVISION}^{commit}")"
+  else
+    git fetch --no-tags origin "$CHROMIUM_REVISION"
+    PINNED_REVISION="$(git rev-parse --verify 'FETCH_HEAD^{commit}')"
+  fi
+  git checkout --detach "$PINNED_REVISION"
 fi
 
 echo "==> Installing official Chromium Linux/Android build dependencies"
@@ -191,14 +198,34 @@ if [[ -z "$APK" || ! -f "$APK" ]]; then
 fi
 
 DEST="$CHROMIUM_ROOT/MVM-Chromium-arm64.apk"
+METADATA="$CHROMIUM_ROOT/MVM-Chromium-arm64.metadata.txt"
 cp "$APK" "$DEST"
 BUILD_REVISION="$(git rev-parse HEAD)"
 DEPOT_TOOLS_REVISION_ACTUAL="$(git -C "$DEPOT_TOOLS" rev-parse HEAD)"
 APK_SHA256="$(sha256sum "$DEST" | awk '{print $1}')"
+GN_ARGS_SHA256="$(sha256sum "$OUT_DIR/args.gn" | awk '{print $1}')"
+BUILD_DATE_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+HOST_OS="$(uname -sr)"
+HOST_ARCH="$(uname -m)"
+cat > "$METADATA" <<BUILD_METADATA
+MVM Browser upstream Chromium proof-build metadata
+build_date_utc=$BUILD_DATE_UTC
+host_os=$HOST_OS
+host_arch=$HOST_ARCH
+chromium_revision=$BUILD_REVISION
+depot_tools_revision=$DEPOT_TOOLS_REVISION_ACTUAL
+target_os=android
+target_cpu=arm64
+gn_args_sha256=$GN_ARGS_SHA256
+apk_file=$(basename "$DEST")
+apk_sha256=$APK_SHA256
+BUILD_METADATA
 echo
 echo "SUCCESS: Upstream Chromium Android browser built."
 echo "APK: $DEST"
+echo "Metadata: $METADATA"
 echo "Chromium revision: $BUILD_REVISION"
 echo "depot_tools revision: $DEPOT_TOOLS_REVISION_ACTUAL"
+echo "GN args SHA-256: $GN_ARGS_SHA256"
 echo "APK SHA-256: $APK_SHA256"
 echo "NOTE: This is an unbranded Chromium proof build, not yet the finished MVM Browser."
