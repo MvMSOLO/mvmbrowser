@@ -31,11 +31,14 @@ A starter script is now committed at [`scripts/build-chromium-android.sh`](../sc
 
 Before any source download, run the no-cost environment report: `bash scripts/check-chromium-build-host.sh`. It prints CPU, RAM, free disk, and basic Linux-distribution details without installing packages, downloading source, or creating cloud resources.
 
-Run the build only on a host that meets the report's requirements, after confirming available disk/network and the intended cost:
+Run the build only on a host that meets the report's requirements, after confirming available disk/network and the intended cost. For reproducible testing, pass an exact Chromium commit/ref through `CHROMIUM_REVISION`:
 
 ```bash
-bash scripts/build-chromium-android.sh
+bash scripts/check-chromium-build-host.sh
+CHROMIUM_REVISION=<commit-or-ref> bash scripts/build-chromium-android.sh
 ```
+
+At completion, the script reports the actual Chromium commit and the APK SHA-256 checksum. Save both alongside the logs. Omitting `CHROMIUM_REVISION` uses the commit present in the checkout; pinning is recommended when comparing repeat builds.
 
 The expected output is an unbranded Chromium APK named `MVM-Chromium-arm64.apk` under the chosen Chromium workspace. The script has been committed, but it has **not** been executed in this environment; do not treat the APK as built or tested yet.
 
