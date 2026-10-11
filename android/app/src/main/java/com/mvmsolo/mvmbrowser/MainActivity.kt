@@ -189,8 +189,8 @@ class MainActivity : Activity() {
             userAgentString = userAgentString
         }
         CookieManager.getInstance().setAcceptCookie(true)
-        // Expose the native bridge only while the bundled MVM home screen is active.
-        web.addJavascriptInterface(BrowserBridge(), "BrowserBridge")
+        // The native bridge is attached only after navigation reaches the bundled home page.
+        // Never expose it during the initial setup of a WebView that may load a remote URL.
         web.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): android.webkit.WebResourceResponse? {
                 // Keep the callback fast: rules are preloaded in memory and no network or disk I/O runs here.
