@@ -66,17 +66,14 @@ fi
 
 # When Android Build Tools are available, inspect the binary manifest too.
 # The ZIP-only fixture path remains useful for offline CI without an Android SDK.
+SDK_BUILD_TOOLS="${CHROMIUM_ROOT:-$HOME/chromium-mvm}/src/third_party/android_sdk/public/build-tools"
 AAPT_BIN="${AAPT:-}"
 if [[ -z "$AAPT_BIN" ]] && command -v aapt >/dev/null 2>&1; then
   AAPT_BIN="$(command -v aapt)"
 fi
-if [[ -z "$AAPT_BIN" ]]; then
-  SDK_BUILD_TOOLS="${CHROMIUM_ROOT:-$HOME/chromium-mvm}/src/third_party/android_sdk/public/build-tools"
-  if [[ -d "$SDK_BUILD_TOOLS" ]]; then
-    AAPT_BIN="$(find "$SDK_BUILD_TOOLS" -type f -name aapt -perm -111 -print -quit)"
-  fi
+if [[ -z "$AAPT_BIN" && -d "$SDK_BUILD_TOOLS" ]]; then
+  AAPT_BIN="$(find "$SDK_BUILD_TOOLS" -type f -name aapt -perm -111 -print -quit)"
 fi
-SDK_BUILD_TOOLS="${CHROMIUM_ROOT:-$HOME/chromium-mvm}/src/third_party/android_sdk/public/build-tools"
 
 if [[ -n "$AAPT_BIN" ]]; then
   [[ -x "$AAPT_BIN" ]] || fail "AAPT is not executable: $AAPT_BIN"
