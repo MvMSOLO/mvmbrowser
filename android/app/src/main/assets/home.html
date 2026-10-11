@@ -10,11 +10,12 @@
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 50% 0%,#102a3a 0,transparent 55%),var(--bg);color:#edfaff;font-family:Inter,system-ui,sans-serif}
 main{max-width:780px;margin:auto;padding:clamp(28px,8vh,76px) 22px 36px}.brand{display:flex;align-items:center;gap:12px}.mark{width:48px;height:48px;display:grid;place-items:center;border:1px solid #45e6ff8a;border-radius:16px;color:var(--cyan);font-weight:900;font-size:22px;box-shadow:0 0 28px #45e6ff20;animation:float 4s ease-in-out infinite}
 h1{font-size:clamp(30px,7vw,52px);letter-spacing:-.06em;margin:32px 0 8px}.sub{color:var(--muted);line-height:1.7;margin:0}.status{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#0b121bcc;padding:8px 11px;border-radius:999px;color:#b8cbd8;font-size:12px;margin-top:24px}.dot{width:7px;height:7px;border-radius:50%;background:#45e6ff;box-shadow:0 0 12px #45e6ff;animation:pulse 1.8s infinite}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:30px}.tile{min-height:102px;padding:17px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#111d2b,#0b111b);color:inherit;text-decoration:none;transition:transform .2s,border-color .2s}.tile:active{transform:scale(.98)}.tile b{display:block;margin-bottom:8px}.tile span{color:var(--muted);font-size:13px;line-height:1.45}.tile svg{width:22px;height:22px;stroke:var(--cyan);fill:none;stroke-width:1.7;margin-bottom:14px;animation:icon-breathe 3s ease-in-out infinite}
-footer{margin-top:34px;color:#617789;font-size:12px;line-height:1.7}
-@keyframes pulse{50%{opacity:.35;box-shadow:0 0 2px #45e6ff}}@keyframes float{50%{transform:translateY(-4px)}}@keyframes icon-breathe{50%{filter:drop-shadow(0 0 5px #45e6ff66);transform:translateY(-2px)}}
-@media(min-width:560px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:30px}.tile{min-height:102px;padding:17px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#111d2b,#0b111b);color:inherit;text-decoration:none;display:block;transition:transform .2s,border-color .2s}.tile:active{transform:scale(.98)}.tile b{display:block;margin:7px 0}.tile span{color:var(--muted);font-size:13px;line-height:1.45}.tile .ico{display:block;height:28px;color:var(--cyan)}.ico svg{width:26px;height:26px;overflow:visible}
+footer{margin-top:34px;color:#617789;font-size:12px;line-height:1.7}.icon-panel{margin-top:26px;padding:16px;border:1px solid var(--line);border-radius:18px;background:#0b121bcc}.icon-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.icon-head h2{font-size:15px;margin:0}.icon-head button{background:#132331;border:1px solid #244052;color:var(--cyan);border-radius:10px;padding:8px 11px;font-weight:700}.icon-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-top:14px}.icon-cell{min-width:0;text-align:center;padding:10px 3px;border:1px solid #1b2c3b;border-radius:12px;background:#0d1723;color:var(--cyan)}.icon-cell svg{width:25px;height:25px;display:block;margin:0 auto 7px}.icon-cell small{display:block;color:#a7bac9;font-size:9px;overflow-wrap:anywhere}.hidden{display:none!important}
+@keyframes pulse{50%{opacity:.35;box-shadow:0 0 2px #45e6ff}}@keyframes float{50%{transform:translateY(-4px)}}
+@media(min-width:560px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.icon-grid{grid-template-columns:repeat(8,minmax(0,1fr))}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
+<script src="mvm-icons.js"></script>
 </head>
 <body><main>
 <div class="brand"><div class="mark">M</div><div><strong>MVM BROWSER</strong><div style="color:var(--muted);font-size:12px;margin-top:3px">NATIVE ANDROID · PRIVATE BY DESIGN</div></div></div>
@@ -22,10 +23,26 @@ footer{margin-top:34px;color:#617789;font-size:12px;line-height:1.7}
 <p class="sub">The browser shell, bookmarks, history and saved pages are stored on this device. This home screen is built into the app and works without an internet connection.</p>
 <div class="status"><i class="dot"></i><span>LOCAL HOME · AVAILABLE OFFLINE</span></div>
 <section class="grid">
-<a class="tile" href="https://www.google.com"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><b>Search the web</b><span>Open a search or enter a website above.</span></a>
-<a class="tile" href="https://developer.android.com"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg><b>Explore</b><span>Browse documentation and websites.</span></a>
-<div class="tile"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg><b>Bookmarks</b><span>Use the ☆ button to save a favourite URL.</span></div>
-<div class="tile"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5M12 7v5l3 2"/></svg><b>Offline pages</b><span>Use ↓ on a page to save an offline copy.</span></div>
+<a class="tile" href="https://www.google.com"><i class="ico" data-icon="mvm-search"></i><b>Search the web</b><span>Open a search or enter a website above.</span></a>
+<a class="tile" href="https://developer.android.com"><i class="ico" data-icon="mvm-shield-safe"></i><b>Explore safely</b><span>Browse documentation and websites.</span></a>
+<div class="tile"><i class="ico" data-icon="mvm-bookmark"></i><b>Bookmarks</b><span>Use the bookmark button to save a favourite URL.</span></div>
+<div class="tile"><i class="ico" data-icon="mvm-download"></i><b>Offline pages</b><span>Save a page from the toolbar for offline reading.</span></div>
+<div class="tile"><i class="ico" data-icon="mvm-tabs"></i><b>Multiple tabs</b><span>Keep different pages open in the same browser.</span></div>
+<div class="tile"><i class="ico" data-icon="mvm-history"></i><b>Recent history</b><span>Return to pages opened earlier on this device.</span></div>
+</section>
+<section class="icon-panel">
+<div class="icon-head"><h2>Animated MVM browser icons</h2><button id="toggleIcons" type="button">Show icon set</button></div>
+<div id="iconGrid" class="icon-grid hidden" aria-label="Bundled animated browser icons"></div>
 </section>
 <footer>Pages that have not been saved still need a connection. Websites may restrict offline copies, and dynamic pages may not fully work when saved. MVM Browser uses Android System WebView as its rendering engine.</footer>
-</main></body></html>
+</main>
+<script>
+(function(){
+ const names=['mvm-back','mvm-forward','mvm-home','mvm-tabs','mvm-tab-new','mvm-search','mvm-bookmark','mvm-download','mvm-history','mvm-shield-safe'];
+ document.querySelectorAll('[data-icon]').forEach(el=>{el.innerHTML=window.mvmIcon(el.dataset.icon,28)});
+ const grid=document.getElementById('iconGrid'), button=document.getElementById('toggleIcons');
+ names.forEach(name=>{const cell=document.createElement('div');cell.className='icon-cell';cell.innerHTML=window.mvmIcon(name,28)+'<small>'+name+'</small>';grid.appendChild(cell)});
+ button.addEventListener('click',()=>{const hidden=grid.classList.toggle('hidden');button.textContent=hidden?'Show icon set':'Hide icon set'});
+})();
+</script>
+</body></html>
