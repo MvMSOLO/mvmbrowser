@@ -15,6 +15,8 @@ on:
       - 'scripts/report-chromium-upstream-status.py'
       - 'scripts/check-cromite-release.py'
       - 'scripts/build-cromite-android.sh'
+      - 'scripts/verify-cromite-mvm-apk.sh'
+      - 'tests/test_cromite_mvm_apk_verifier.py'
       - 'docs/CROMITE_ANDROID_BUILD.md'
       - 'docs/CROMITE_BASELINE_AUDIT.md'
       - 'tests/test_cromite_release.py'
@@ -37,6 +39,8 @@ on:
       - 'scripts/report-chromium-upstream-status.py'
       - 'scripts/check-cromite-release.py'
       - 'scripts/build-cromite-android.sh'
+      - 'scripts/verify-cromite-mvm-apk.sh'
+      - 'tests/test_cromite_mvm_apk_verifier.py'
       - 'docs/CROMITE_ANDROID_BUILD.md'
       - 'docs/CROMITE_BASELINE_AUDIT.md'
       - 'tests/test_cromite_release.py'
@@ -193,6 +197,11 @@ jobs:
           grep -Fq 'docker pull "$IMAGE"' scripts/build-cromite-android.sh
           grep -Fq 'chrome_public_apk --offline' scripts/build-cromite-android.sh
           grep -Fq 'CROMITE_MIN_FREE_GIB' scripts/build-cromite-android.sh
+          grep -Fq 'MVM_PACKAGE_NAME="com.mvmsolo.mvmbrowser"' scripts/build-cromite-android.sh
+          grep -Fq 'chrome_public_manifest_package' scripts/build-cromite-android.sh
+          grep -Fq 'branding_status=package-id-only-upstream-ui' scripts/build-cromite-android.sh
+          bash -n scripts/verify-cromite-mvm-apk.sh
+          python3 tests/test_cromite_mvm_apk_verifier.py
           ruby -e 'require "yaml"; YAML.load_file(".github/workflows/chromium-self-hosted-build.yml", aliases: true)'
           grep -Fq 'workflow_dispatch:' .github/workflows/chromium-self-hosted-build.yml
           grep -Fq 'default: "no"' .github/workflows/chromium-self-hosted-build.yml

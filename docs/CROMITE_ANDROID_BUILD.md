@@ -11,6 +11,12 @@
 
 The upstream guide says the build image includes a Chromium source checkout and that the Cromite patches are applied in the source-image preparation workflow. The MVM script deliberately uses that published build image rather than accidentally invoking our separate vanilla-Chromium builder.
 
+## MVM package identity overlay
+
+Before GN generation, the build script verifies that the pinned source contains exactly one upstream `chrome_public_manifest_package = "org.bromite.bromite"` declaration, replaces only that package value with `com.mvmsolo.mvmbrowser`, and checks the produced APK's package metadata and ARM64 ABI with `aapt`. It fails closed if the source context differs or the APK metadata does not match. This aligns the package ID with the existing MVM Android Gradle `applicationId`; it does **not** rebrand the app label, icons, settings UI or new-tab page. Those remain separate work in the source fork at https://github.com/MvMSOLO/mvm-cromite/tree/mvm-branding-bootstrap.
+
+The output is named `MVM-Cromite-153.0.8010.37-arm64-MVM-package.apk`. Metadata explicitly records `branding_status=package-id-only-upstream-ui`. Verify signing and licensing before any install or redistribution.
+
 ## Safe execution
 
 The script defaults to a dry run. It does not pull an image or compile unless the user explicitly supplies `--execute`.
@@ -29,5 +35,5 @@ Output is written under `artifacts/cromite/` by default, or to `OUTPUT_DIR` if s
 - This pinned upstream Chromium base is 153.0.8010.37 and is behind the Chrome Stable baseline recorded in `CROMITE_BASELINE_AUDIT.md`. This is a reproducibility/prototype build, not an approval for sensitive browsing or public release.
 - The upstream APK hash only identifies the upstream release artifact. A locally built APK must have its own checksum; it will not be expected to match the upstream APK byte-for-byte.
 - Inspect signing with Android `apksigner` before installing. The script does not assume the upstream release signing key is available.
-- This build is Cromite, not yet branded or integrated as MVM Browser. MVM package ID, icon, app name, and any custom UI changes are separate work.
+- This build overrides only the Android package ID to `com.mvmsolo.mvmbrowser`. App label, icons, strings, settings UI, start page, signing, and MVM feature-porting remain incomplete; do not call it a finished MVM Browser.
 - Preserve GPL-3.0 and third-party license notices and comply with corresponding source-distribution obligations.

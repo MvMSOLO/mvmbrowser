@@ -69,6 +69,12 @@ Use the existing [feature port matrix](CHROMIUM_FEATURE_PORT_MATRIX.md) as the a
 
 **Acceptance:** clean build from recorded inputs and a release checklist completed by a human reviewer.
 
+## Source-fork progress (2026-10-11)
+
+An MVM-owned Cromite source fork is available at https://github.com/MvMSOLO/mvm-cromite. Branch `mvm-branding-bootstrap` adds `build/patches/MVM-Package-Name.patch`, places it after the upstream `Bromite-package-name.patch`, and validates the static patch-stack structure in GitHub Actions. This is an initial source-level package identity overlay, not full branding or a compiled APK. The static validator does not confirm that the patch applies to a complete Chromium checkout; that remains a full-build acceptance gate.
+
+The main MVM Browser repo's build script now feeds a readable, fail-closed container script to the pinned Cromite image, applies the same package-ID override, and checks the generated APK's package metadata before export. The real source build still requires a suitable x86-64 Linux/Docker host and an image tag confirmed available at runtime.
+
 ## First technical action
 
 Do not blindly clone the full source or start a paid runner. Inspect the current upstream workflow and its Docker image/version mapping, then choose a pinned revision. The existing scripts and workflows in this repository were initially designed around vanilla Chromium and must be audited before reuse for Cromite; they are not proof that a Cromite build has succeeded.
