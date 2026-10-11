@@ -97,7 +97,7 @@ The public price table above is only a market comparison, not a guarantee that t
 
 ## Current verification status
 
-- The current MVM Browser Android APK and Release APK CI workflows passed for commit fe9b9b3.
+- The current MVM Browser Android APK unit tests and debug build passed for the bridge/tab-scoping fix at commit 574590a3: https://github.com/MvMSOLO/mvmbrowser/actions/runs/38124335068. The matching GitHub Release artifact workflow also completed successfully: https://github.com/MvMSOLO/mvmbrowser/actions/runs/38124335137.
 - The current application still uses Android System WebView.
 - The Chromium bootstrap CI checks Bash syntax, Python syntax/unit tests for the release reporter, host-preflight pass/fail paths, invalid build paths/configuration, refusal to fetch source when disk requirements fail, clean/dirty source-tree behavior, the offline verifier's success/failure using a synthetic APK, and device preflight using a mock ADB device. APK verifier tests exercise `aapt` package/API/ABI metadata and `apksigner` success/failure responses. It deliberately does not attempt an expensive Chromium build. Latest confirmed green run: https://github.com/MvMSOLO/mvmbrowser/actions/runs/38123627275.
 - The weekly upstream-watch workflow has successfully fetched live public metadata. In its 2026-10-11 snapshot, Chrome 155 was the regular stable Android release, Chrome 156 was Early Stable/limited rollout, and the latest observed uazo/cromite release was based on Chromium 153. The report is a version signal, not a security audit: https://github.com/MvMSOLO/mvmbrowser/actions/runs/38119448150.
@@ -112,7 +112,7 @@ The public price table above is only a market comparison, not a guarantee that t
 - Before any public distribution, review docs/CHROMIUM_DISTRIBUTION_CHECKLIST.md for branding, notices, security updates, and build provenance.
 - A manual-only build workflow is available at .github/workflows/chromium-self-hosted-build.yml. It requires a trusted self-hosted Linux x64 runner labelled chromium-builder, explicit confirm_build=yes on main, and pinned 40-character Chromium/depot_tools commit SHAs. It uploads the APK plus metadata/GN args and adds hashes/revisions to the job summary. It does not provision a host or run automatically on pushes/PRs.
 - The feature-level port plan is docs/CHROMIUM_FEATURE_PORT_MATRIX.md; it maps navigation, tabs, search, ad filtering, bookmarks/history, offline MHTML, downloads, security and app identity to the Chromium browser-shell port.
-- No Chromium APK has been built or device-tested in this environment, and no cloud host has been provisioned. The CI APK verifier uses synthetic APK fixtures and mocked aapt/apksigner responses; it is not evidence of a real signed Chromium APK. Latest bootstrap CI pass (version parser, `.gclient` Android-target checker, source cleanliness guard, synthetic APK metadata/signature checks, and mocked device preflight all passed): https://github.com/MvMSOLO/mvmbrowser/actions/runs/38124162271.
+- No Chromium APK has been built or device-tested in this environment, and no cloud host has been provisioned. The CI APK verifier uses synthetic APK fixtures and mocked aapt/apksigner responses; it is not evidence of a real signed Chromium APK. Latest bootstrap CI pass (version parser, `.gclient` Android-target checker, source cleanliness guard, synthetic APK metadata/signature checks, PATH-based tool lookup, and mocked device preflight all passed): https://github.com/MvMSOLO/mvmbrowser/actions/runs/38124276582.
 
 ## Follow-up checklist
 
