@@ -35,8 +35,6 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import java.io.File
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -45,6 +43,7 @@ import org.json.JSONObject
 import java.util.UUID
 
 private const val HOME_ASSET_URL = "file:///android_asset/home.html"
+private const val MAX_SEARCH_RESPONSE_CHARS = 1_500_000
 
 class MainActivity : Activity() {
     private val bg = Color.rgb(7, 10, 16)
@@ -559,7 +558,9 @@ class MainActivity : Activity() {
                         setRequestProperty("Accept-Language", "en-US,en;q=0.9")
                     }
                     connection = requestConnection
-                    val html = requestConnection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                    val html = requestConnection.inputStream.bufferedReader(Charsets.UTF_8).use {
+                        SearchResponseReader.readLimited(it, MAX_SEARCH_RESPONSE_CHARS)
+                    }
                     val anchors = Regex("(?is)<a[^>]*class=[\"'][^\"']*result__a[^\"']*[\"'][^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>").findAll(html).toList()
                     val snippets = Regex("(?is)class=[\"'][^\"']*result__snippet[^\"']*[\"'][^>]*>(.*?)</(?:a|div)>").findAll(html).map { cleanSearchText(it.groupValues[1]) }.toList()
                     anchors.take(10).forEachIndexed { index, match ->
