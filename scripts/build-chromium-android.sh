@@ -43,18 +43,39 @@ if (( FREE_GB < CHROMIUM_MIN_FREE_GB )); then
   fi
 fi
 
+# Use the lower of host-visible RAM and container/cgroup memory limits.
+MEM_KB=0
 if [[ -r /proc/meminfo ]]; then
   MEM_KB="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
+fi
+if [[ -r /sys/fs/cgroup/memory.max ]]; then
+  CGROUP_BYTES="$(cat /sys/fs/cgroup/memory.max)"
+  if [[ "$CGROUP_BYTES" =~ ^[0-9]+$ ]] && (( CGROUP_BYTES > 0 )); then
+    CGROUP_KB="$((CGROUP_BYTES / 1024))"
+    if (( MEM_KB == 0 || CGROUP_KB < MEM_KB )); then MEM_KB="$CGROUP_KB"; fi
+  fi
+elif [[ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]]; then
+  CGROUP_BYTES="$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)"
+  if [[ "$CGROUP_BYTES" =~ ^[0-9]+$ ]] && (( CGROUP_BYTES > 0 && CGROUP_BYTES < 1099511627776 )); then
+    CGROUP_KB="$((CGROUP_BYTES / 1024))"
+    if (( MEM_KB == 0 || CGROUP_KB < MEM_KB )); then MEM_KB="$CGROUP_KB"; fi
+  fi
+fi
+
+if (( MEM_KB > 0 )); then
   MEM_GIB="$((MEM_KB / 1024 / 1024))"
+  echo "Detected effective RAM limit: ${MEM_GIB} GiB"
   if (( MEM_GIB < 8 )); then
-    echo "ERROR: detected ${MEM_GIB} GiB RAM; Chromium's documented minimum is 8 GiB." >&2
+    echo "ERROR: effective memory limit is ${MEM_GIB} GiB; Chromium's documented minimum is 8 GiB." >&2
     echo "16+ GiB is highly recommended. Set ALLOW_LOW_MEMORY=1 only for an intentional test." >&2
     if [[ "${ALLOW_LOW_MEMORY:-0}" != "1" ]]; then
       exit 2
     fi
   elif (( MEM_GIB < 16 )); then
-    echo "WARNING: detected ${MEM_GIB} GiB RAM; more than 16 GiB is highly recommended." >&2
+    echo "WARNING: detected ${MEM_GIB} GiB effective RAM; more than 16 GiB is highly recommended." >&2
   fi
+else
+  echo "WARNING: could not determine RAM limit; continuing without a memory preflight." >&2
 fi
 
 if (( EUID != 0 )) && ! command -v sudo >/dev/null 2>&1; then
