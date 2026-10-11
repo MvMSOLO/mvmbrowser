@@ -25,6 +25,7 @@ This checklist is for the point when the first upstream Chromium APK has built a
 ## Build provenance and reproducibility
 
 - [ ] Store the exact Chromium revision, depot_tools revision, GN args, host OS, toolchain versions, build logs, APK SHA-256, and test results for each candidate release.
+- [ ] Keep the generated `MVM-Chromium-arm64.metadata.txt` and `MVM-Chromium-arm64.args.gn` with the APK; run `scripts/verify-chromium-apk.sh` before installation or transfer.
 - [ ] Use a dedicated build host; don't use a small ephemeral GitHub runner as a substitute for a qualified Chromium build machine.
 - [ ] Keep signing keys and credentials outside source control and build logs.
 - [ ] Ensure public release artifacts are produced only from reviewed source revisions and a reproducible documented process.
@@ -34,7 +35,7 @@ This checklist is for the point when the first upstream Chromium APK has built a
 
 - The current MVM Browser product remains a Kotlin app using Android System WebView.
 - The repository contains a script intended to build upstream Chromium's Chrome public APK target as a proof milestone.
-- Neither the Chromium APK build nor the above distribution checks have been completed in this environment.
+- The Chromium APK itself has not been built or device-tested in this environment. The offline verifier is covered by CI using synthetic APK fixtures; that validates verifier behavior, not a real Chromium build.
 
 ## Official sources
 
