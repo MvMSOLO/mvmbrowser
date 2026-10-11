@@ -25,6 +25,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.WebStorage
 import android.net.http.SslError
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -378,13 +379,15 @@ class MainActivity : Activity() {
         options.add("★  Bookmarks")
         options.add("↓  Offline pages")
         options.add("◷  History")
+        options.add("♧  Clear browsing data")
         AlertDialog.Builder(this).setTitle("Tabs & library").setItems(options.toTypedArray()) { _, which ->
             when {
                 which < tabs.size -> activate(which)
                 which == tabs.size -> newTab()
                 which == tabs.size + 1 -> showSavedList("bookmarks", "Bookmarks", false)
                 which == tabs.size + 2 -> showSavedList("offline-pages", "Offline pages", true)
-                else -> showHistory()
+                which == tabs.size + 3 -> showHistory()
+                else -> showClearDataDialog()
             }
         }.setNegativeButton("Close current tab") { _, _ -> closeActiveTab() }
             .setNeutralButton("Clear history") { _, _ -> prefs.edit().remove("history").apply(); toast("History cleared") }
@@ -409,6 +412,27 @@ class MainActivity : Activity() {
             val url = items[which].substringAfter("|", items[which])
             if (tabs.size > 1) newTab(url) else active()?.web?.loadUrl(url)
         }.setNegativeButton("Close", null).show()
+    }
+
+    private fun showClearDataDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Clear browsing data?")
+            .setMessage("This clears browsing history, cookies, cached files, and website storage across open tabs. Bookmarks and saved offline pages will remain.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Clear data") { _, _ ->
+                prefs.edit().remove("history").apply()
+                tabs.forEach { tab ->
+                    tab.web.clearHistory()
+                    tab.web.clearCache(true)
+                    tab.web.clearFormData()
+                }
+                WebStorage.getInstance().deleteAllData()
+                CookieManager.getInstance().removeAllCookies {
+                    CookieManager.getInstance().flush()
+                }
+                toast("Browsing data cleared")
+            }
+            .show()
     }
 
     private fun closeActiveTab() {
