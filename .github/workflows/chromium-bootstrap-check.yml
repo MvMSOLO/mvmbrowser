@@ -7,6 +7,7 @@ on:
       - 'scripts/build-chromium-android.sh'
       - 'scripts/check-chromium-build-host.sh'
       - 'scripts/verify-chromium-apk.sh'
+      - 'scripts/smoke-test-chromium-device.sh'
       - 'scripts/report-chromium-upstream-status.py'
       - 'tests/test_chromium_upstream_status.py'
       - '.github/workflows/chromium-build-script-check.yml'
@@ -39,6 +40,7 @@ jobs:
           bash -n scripts/build-chromium-android.sh
           bash -n scripts/check-chromium-build-host.sh
           bash -n scripts/verify-chromium-apk.sh
+          bash -n scripts/smoke-test-chromium-device.sh
       - name: Validate and test upstream release report
         run: |
           python3 -m py_compile scripts/report-chromium-upstream-status.py
@@ -55,6 +57,7 @@ jobs:
           grep -Fq 'FETCH_HEAD^{commit}' scripts/build-chromium-android.sh
           grep -Fq 'MVM-Chromium-arm64.metadata.txt' scripts/build-chromium-android.sh
           grep -Fq 'MVM-Chromium-arm64.args.gn' scripts/build-chromium-android.sh
+          grep -Fq 'interactive confirmation' scripts/smoke-test-chromium-device.sh
           grep -Fq 'GN args SHA-256:' scripts/build-chromium-android.sh
           grep -Fq 'GN_ARGS_SHA256=' scripts/build-chromium-android.sh
           grep -Fq '/sys/fs/cgroup/memory.max' scripts/build-chromium-android.sh
@@ -169,6 +172,47 @@ jobs:
 
           bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-pass.txt
           grep -Fq 'VERIFY PASSED' verifier-pass.txt
+
+          mkdir -p "$test_root/src/out/MVM/bin"
+          cat > "$test_root/src/out/MVM/bin/chrome_public_apk" <<'WRAPPER'
+          #!/usr/bin/env bash
+          echo "Unexpected wrapper execution in preflight-only test." >&2
+          exit 99
+          WRAPPER
+          chmod +x "$test_root/src/out/MVM/bin/chrome_public_apk"
+
+          fake_adb="$test_root/fake-adb"
+          cat > "$fake_adb" <<'ADB'
+          #!/usr/bin/env bash
+          if [[ "${1:-}" == "devices" ]]; then
+            printf 'List of devices attached\nTEST-DEVICE\tdevice\n'
+            exit 0
+          fi
+          if [[ "${1:-}" == "-s" ]]; then
+            shift 2
+            if [[ "${1:-}" == "shell" && "${2:-}" == "getprop" ]]; then
+              case "${3:-}" in
+                ro.build.version.sdk) echo "${FAKE_ANDROID_SDK:-35}"; exit 0 ;;
+                ro.product.cpu.abi) echo "${FAKE_ANDROID_ABI:-arm64-v8a}"; exit 0 ;;
+              esac
+            fi
+          fi
+          echo "Unexpected fake adb command: $*" >&2
+          exit 3
+          ADB
+          chmod +x "$fake_adb"
+
+          CHROMIUM_ROOT="$test_root" ADB="$fake_adb" \
+            bash scripts/smoke-test-chromium-device.sh --serial TEST-DEVICE > device-ready.txt
+          grep -Fq 'DEVICE READY: TEST-DEVICE' device-ready.txt
+          grep -Fq 'Preflight only: no installation or launch was attempted.' device-ready.txt
+
+          if CHROMIUM_ROOT="$test_root" ADB="$fake_adb" FAKE_ANDROID_SDK=28 \
+            bash scripts/smoke-test-chromium-device.sh --serial TEST-DEVICE > old-android.txt 2>&1; then
+            echo "Expected the device preflight to reject Android SDK 28." >&2
+            exit 1
+          fi
+          grep -Fq 'requires Android 10 / API 29 or newer' old-android.txt
 
           printf '\n# altered after build\n' >> "$test_args"
           if bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-fail.txt 2>&1; then
