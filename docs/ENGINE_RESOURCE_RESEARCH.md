@@ -60,20 +60,22 @@ Prices below are a research snapshot as of 2026-10-11, before taxes, optional st
 
 | Candidate | Published configuration | Published price | Assessment |
 | --- | --- | --- | --- |
-| DigitalOcean CPU-Optimized Droplet | 16 vCPU, 32 GiB RAM, 200 GiB SSD | $0.50/hour; $336/month cap shown in current price table | Best initial cloud candidate on price/spec balance, if the chosen region offers it. A 200-GiB disk leaves practical headroom beyond Chromium's 100-GB free-space minimum. |
-| GitHub Actions larger runner | 8 vCPU, 32 GB RAM, 300 GB SSD | Linux 8-core rate shown as $0.022/minute (about $1.32 per billed hour) | Convenient ephemeral CI worker, but GitHub documents these as available only to organizations/enterprises on Team or Enterprise Cloud; confirm eligibility before planning around them. Build logs and timeouts need to be managed. |
-| GitHub Actions larger runner | 16 vCPU, 64 GB RAM, 600 GB SSD | Linux 16-core rate shown as $0.042/minute (about $2.52 per billed hour) | More memory/disk headroom, but higher cost; requires an appropriate billing setup. |
+| DigitalOcean Basic Droplet | 8 vCPU, 16 GiB RAM, 320 GiB SSD (s-8vcpu-16gb) | $0.14286/hour; $96/month cap | Lower-cost proof-build candidate with enough disk and the recommended 16 GiB RAM; shared CPU may lengthen the build. |
+| DigitalOcean CPU-Optimized Droplet | 16 vCPU, 32 GiB RAM, 200 GiB SSD | $0.50/hour; $336/month cap | Faster, higher-cost candidate. Provides dedicated CPU and useful disk headroom. |
+| GitHub Actions larger runner | 4 vCPU, 16 GB RAM, 150 GB SSD | Linux 4-core rate is $0.012/minute (about $0.72 per billed hour) | Fits the published RAM/disk minimums, but has fewer CPU threads; only consider if the account is eligible for paid larger runners. |
+| GitHub Actions larger runner | 8 vCPU, 32 GB RAM, 300 GB SSD | Linux 8-core rate is $0.022/minute (about $1.32 per billed hour) | More headroom, but paid larger runners are limited to organizations/enterprises on Team or Enterprise Cloud. |
+| GitHub Actions larger runner | 16 vCPU, 64 GB RAM, 600 GB SSD | Linux 16-core rate is $0.042/minute (about $2.52 per billed hour) | More memory/disk headroom, with the highest runner cost in this shortlist. |
 | Google Cloud Compute Engine | E2 high-memory machine family includes 8-vCPU/64-GB and other shapes | Region, disk, and network dependent; use the official calculator | Technically possible, but don't pick a machine or estimate a final bill until region and disk are selected. |
 
 Official provider links:
 - DigitalOcean Droplet pricing: https://www.digitalocean.com/pricing/droplets
-- DigitalOcean pricing documentation: https://docs.digitalocean.com/products/droplets/details/pricing/
+- DigitalOcean pricing documentation (per-second billing from 2026, with minimum charge): https://docs.digitalocean.com/products/droplets/details/pricing/
 - GitHub larger-runner size table: https://docs.github.com/en/actions/reference/runners/larger-runners
-- GitHub Actions runner pricing: https://github.com/github/docs/blob/main/content/billing/reference/actions-runner-pricing.md
+- GitHub Actions runner pricing: https://docs.github.com/en/billing/reference/actions-runner-pricing
 - Google Cloud machine families: https://docs.cloud.google.com/compute/docs/general-purpose-machines
 - Google Cloud pricing calculator/overview: https://cloud.google.com/products/compute
 
-Important: cloud build machines are paid resources. No instance has been launched and no billing-enabled account has been accessed. DigitalOcean's terms say its services are not intended for users under 18 unless they have sufficient legal consent, permission, and capacity under applicable jurisdiction; account eligibility and any required adult/guardian involvement must be confirmed before using that provider. On DigitalOcean's published CPU-Optimized plan, the compute line item would be roughly $2 for four billed hours or $5 for ten billed hours at the listed $0.50/hour, but Chromium checkout/build duration is not yet known; do not treat these as total build-cost guarantees. Stop/destroy an ephemeral instance when finished and check for separately retained volumes, snapshots, or other billable resources.
+Important: cloud build machines are paid resources. No instance has been launched and no billing-enabled account has been accessed. DigitalOcean's terms say its services are not intended for users under 18 unless they have sufficient legal consent, permission, and capacity under applicable jurisdiction; account eligibility and any required adult/guardian involvement must be confirmed before using that provider. On DigitalOcean's published Basic 8-vCPU/16-GiB plan, compute would be roughly $0.57 for four billed hours or $1.43 for ten billed hours at $0.14286/hour. The 16-vCPU/32-GiB CPU-Optimized plan would be roughly $2 for four billed hours or $5 for ten billed hours at $0.50/hour. These are compute-only estimates; Chromium checkout/build duration, data transfer, taxes, retained volumes, and snapshots can change the total. DigitalOcean's documentation describes per-second billing with a 60-second/$0.01 minimum. Stop/destroy an ephemeral instance when finished and check for separately retained volumes, snapshots, or other billable resources.
 
 ## Recommended implementation sequence
 
@@ -96,7 +98,7 @@ Important: cloud build machines are paid resources. No instance has been launche
 
 ## Follow-up checklist
 
-- [ ] Select a host: DigitalOcean CPU-Optimized 16-vCPU/32-GiB/200-GiB is the current cost-focused candidate; GitHub larger runners are an alternative if the account supports them.
+- [ ] Select a host: DigitalOcean Basic 8-vCPU/16-GiB/320-GiB is the lower-cost candidate; CPU-Optimized 16-vCPU/32-GiB/200-GiB is the faster alternative. GitHub larger runners require an eligible paid organization plan.
 - [ ] Confirm the exact region, hourly rate, disk capacity, budget limit, and cleanup plan before creating any paid resource.
 - [ ] Confirm an eligible Linux build host and exact free disk/RAM.
 - [ ] Run bash scripts/check-chromium-build-host.sh on the candidate Linux host before any source download.
