@@ -21,7 +21,7 @@ References:
 
 The current app's capability-by-capability work is tracked in [CHROMIUM_FEATURE_PORT_MATRIX.md](CHROMIUM_FEATURE_PORT_MATRIX.md). Use it as the acceptance checklist for the downstream shell port; the existing WebView features are not automatically inherited by the proof APK.
 
-### Preferred shortcut to evaluate first: Cromite source fork
+### Adopted direction: use a complete open-source Chromium browser as the base
 
 The first candidate to evaluate is [Cromite](https://github.com/uazo/cromite), a complete Chromium-based Android browser project, rather than trying to embed its APK inside the existing Kotlin app.
 
@@ -39,13 +39,27 @@ Useful upstream references:
 - Build instructions and Docker-image workflow: https://github.com/uazo/cromite/blob/master/docs/HOW_TO_BUILD.md
 - License: https://github.com/uazo/cromite/blob/master/LICENSE
 
-This is a candidate recommendation, not yet an approved migration: first review the source, latest release/security state, license requirements, build image provenance, and whether MVM's feature list can be ported cleanly.
+Decision for the next prototype: evaluate Cromite as the downstream source base instead of paying for a separate cloud Chromium build. This avoids maintaining a separate raw-Chromium build path if the project proves suitable, but it does not eliminate compilation, testing, or ongoing security updates. Before shipping any derivative, review the exact source revision, current security state, license requirements, build image provenance, and whether MVM's feature list can be ported cleanly.
 
-1. **Choose the Chromium base:** evaluate Cromite first; if it fails the maintenance, license, or feature requirements, use upstream Chromium Android browser source. Do not vendor an imaginary AAR.
-2. **Prove the build environment:** build an unmodified Android Chromium APK in a dedicated Linux environment before porting MVM UI. Chromium's checkout and build are far larger than a normal Gradle project; the current Android APK CI workflow is not sufficient by itself.
-3. **Create a reproducible build:** pin the upstream revision, build tools, target ABI(s), and security-update procedure.
-4. **Port MVM identity and features:** integrate the MVM brand, new-tab experience, toolbar, tabs, bookmarks, history, and downloads into the Chromium-based browser shell.
-5. **Validate before release:** install and test on real Android devices, verify HTTPS/error handling, downloads, tab lifecycle, and produce signed release artifacts only after the debug build passes.
+1. **Inspect the ready-made release without paying for a build server:** use the upstream release APK only as a temporary reference/test artifact on a compatible Android device. Do not insert the APK into the current app or treat it as an embeddable engine.
+2. **Fork the source project under MVM's own identity:** keep the upstream license and notices; change application identity, icons, strings, new-tab UI, and browser branding in source.
+3. **Use an existing free build environment if it genuinely has enough RAM/disk.** Do not try to build Chromium on the current constrained environment. If no suitable free environment exists, pause before creating paid infrastructure rather than silently incurring cost.
+4. **Port MVM features in small, testable groups:** tabs, bookmarks, history, downloads, offline saves, ad/tracker rules, and the existing MVM start page. Keep a feature matrix and test each port.
+5. **Pin upstream revisions and maintain security updates:** record source commit, build inputs, APK checksum, and third-party notices for each test release.
+6. **Validate before release:** test on real Android devices, including HTTPS/error handling, downloads, tab lifecycle, app resume, permissions, and update behavior.
+
+## No-paid-server prototype plan
+
+The immediate goal is a zero-cloud-cost feasibility check, not a claim that a customized APK already exists:
+
+- [ ] Inspect Cromite's latest release and source revision; confirm supported Android version and device ABI.
+- [ ] Treat the prebuilt release as a reference/test app only; do not re-sign, rename, or redistribute it as MVM.
+- [ ] Inspect the source license and build instructions before making a derivative. Cromite declares GPL-3.0 for its patches, so a distributed derivative must comply with the applicable source and notice obligations.
+- [ ] Try a build only on an already-available environment that passes `scripts/check-chromium-build-host.sh`; do not create a paid server automatically.
+- [ ] If no eligible free build host is available, continue porting/design work in source and defer APK production until a suitable host is available.
+- [ ] Keep the existing MVM Browser WebView app working until the source fork produces an installable and tested MVM APK.
+
+A prebuilt APK saves the cost of producing a reference binary, but it cannot replace the source build needed to change application ID, UI, assets, and native browser behavior safely.
 
 ## First build step
 
