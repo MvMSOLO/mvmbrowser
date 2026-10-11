@@ -48,7 +48,19 @@ Trade-offs:
 - Rebranding requires understanding and maintaining browser UI/source patches, update process, licensing and notices. Its extra privacy/ad-blocking patches create additional behavior to review.
 - The last stable release observed in this snapshot is dated 2026-09-15 and is based on Chromium 153. Google published Chrome 155 stable for Android on 2026-10-06, and Chrome 156 was in an early Android rollout on 2026-10-07. Therefore, the observed Cromite binary is behind the current Chromium release line and should not be treated as a security-current production base without a fresh matching build and patch review.
 
-## Candidate C — Mozilla GeckoView
+## Candidate C — qwez-dev Cromite maintenance fork (source-only lead)
+
+Source: https://github.com/qwez-dev/cromite
+
+What was verified against GitHub metadata:
+- The repository is a public fork of uazo/cromite and uses GPL-3.0.
+- Its latest commit visible to the API at research time is `e84cc676`, dated 2026-08-24.
+- The GitHub Releases API returned an empty list. That means there is no published release artifact available through this fork's GitHub Releases page to evaluate as a ready APK.
+- Its README claims a goal of following current Chromium stable more closely, but the current repository activity snapshot alone does not prove the fork has caught up to the October 2026 stable branch.
+
+Decision: track it as a **source-review lead only**, not as a ready-to-use binary or confirmed security-current base. Before adopting it, compare its Chromium base version to current stable, examine the patch series and CI/build workflow, verify license obligations, and require a successful build and security update process.
+
+## Candidate D — Mozilla GeckoView
 
 Source: https://github.com/mozilla/geckoview
 Quick start: https://github.com/mozilla-firefox/firefox/blob/main/mobile/android/docs/geckoview/consumer/geckoview-quick-start.md
@@ -59,7 +71,7 @@ GeckoView is a genuine embeddable browser engine, but it is Gecko, not Chromium.
 
 1. Do not provision a paid host until eligibility, account limits, and spending have been cleared by the account owner/adult where required.
 2. Use a published Cromite APK only as an optional comparison artifact. Before relying on it, verify its SHA-256, signing certificate, source release tag, Chromium version, and security patch status. Do not install a binary just because a web page links to it.
-3. Compare Cromite's browser-shell approach against the raw Chromium source tree; estimate the MVM branding/UI port from source code rather than assuming an APK can be embedded.
+3. Compare the raw Chromium source tree with the two Cromite source repos: uazo/cromite has a published browser APK release history but the last observed APK is behind current stable; qwez-dev/cromite presents a maintenance intent but currently has no GitHub release assets. Do not classify either as security-current without version/patch review and a successful build. Estimate the MVM branding/UI port from source rather than assuming an APK can be embedded.
 4. Keep the existing WebView app stable during experiments.
 5. After selecting a base, pin the source revision, target ABI/minimum Android version, build configuration, license notices, update cadence, and APK provenance.
 
@@ -75,6 +87,8 @@ GeckoView is a genuine embeddable browser engine, but it is Gecko, not Chromium.
 - Chromium Android build requirements: https://chromium.googlesource.com/chromium/src/+/main/docs/android_build_instructions.md
 - Cromite repository and version/platform scope: https://github.com/uazo/cromite
 - Cromite build process: https://github.com/uazo/cromite/blob/master/docs/HOW_TO_BUILD.md
+- Cromite maintenance fork source: https://github.com/qwez-dev/cromite
+- Cromite maintenance fork releases (currently no published releases in the API snapshot): https://github.com/qwez-dev/cromite/releases
 - Exact release and assets: https://github.com/uazo/cromite/releases/tag/v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a
 - Current Chrome for Android release note (155 stable, 2026-10-06): https://chromereleases.googleblog.com/2026/10/chrome-for-android-update_01835271525.html
 - Current early Chrome Android 156 release note (2026-10-07): https://chromereleases.googleblog.com/2026/10/chrome-for-android-update_01286554645.html
