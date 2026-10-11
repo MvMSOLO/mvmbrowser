@@ -199,11 +199,13 @@ fi
 
 DEST="$CHROMIUM_ROOT/MVM-Chromium-arm64.apk"
 METADATA="$CHROMIUM_ROOT/MVM-Chromium-arm64.metadata.txt"
+ARGS_COPY="$CHROMIUM_ROOT/MVM-Chromium-arm64.args.gn"
 cp "$APK" "$DEST"
+cp "$OUT_DIR/args.gn" "$ARGS_COPY"
 BUILD_REVISION="$(git rev-parse HEAD)"
 DEPOT_TOOLS_REVISION_ACTUAL="$(git -C "$DEPOT_TOOLS" rev-parse HEAD)"
 APK_SHA256="$(sha256sum "$DEST" | awk '{print $1}')"
-GN_ARGS_SHA256="$(sha256sum "$OUT_DIR/args.gn" | awk '{print $1}')"
+GN_ARGS_SHA256="$(sha256sum "$ARGS_COPY" | awk '{print $1}')"
 BUILD_DATE_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 HOST_OS="$(uname -sr)"
 HOST_ARCH="$(uname -m)"
@@ -216,6 +218,7 @@ chromium_revision=$BUILD_REVISION
 depot_tools_revision=$DEPOT_TOOLS_REVISION_ACTUAL
 target_os=android
 target_cpu=arm64
+gn_args_file=$(basename "$ARGS_COPY")
 gn_args_sha256=$GN_ARGS_SHA256
 apk_file=$(basename "$DEST")
 apk_sha256=$APK_SHA256
@@ -224,6 +227,7 @@ echo
 echo "SUCCESS: Upstream Chromium Android browser built."
 echo "APK: $DEST"
 echo "Metadata: $METADATA"
+echo "GN args: $ARGS_COPY"
 echo "Chromium revision: $BUILD_REVISION"
 echo "depot_tools revision: $DEPOT_TOOLS_REVISION_ACTUAL"
 echo "GN args SHA-256: $GN_ARGS_SHA256"
