@@ -87,19 +87,22 @@ The public price table above is only a market comparison, not a guarantee that t
 
 ## Recommended implementation sequence
 
-1. Identify a Linux x86-64 build host with 100+ GB free disk and 16+ GB RAM (or a suitable self-hosted machine).
-2. Run scripts/build-chromium-android.sh and record the host specs, upstream revision, commands, duration, failures, and APK checksum.
-3. Install and launch the unmodified proof APK on an Android device/emulator before porting MVM UI.
-4. Pin a tested Chromium revision and document how security updates will be merged and rebuilt.
-5. Decide whether to integrate MVM features into Chromium's browser shell or maintain a downstream fork. Keep current app behavior until a working prototype is verified.
-6. Only then plan the MVM branding/UI port, tab and bookmark storage, download handling, permissions, safe browsing strategy, and release signing.
+1. Review docs/CHROMIUM_BASE_OPTIONS.md and decide whether to keep the upstream Chromium baseline or prototype a Cromite browser-shell fork. A browser APK cannot simply be embedded into the current Kotlin/WebView app.
+2. Resolve the connected cloud account's quota/status warning and confirm legal/account eligibility before considering paid infrastructure.
+3. Select a build host with Linux x86-64, 100+ GB free disk, and at least 8 GB RAM (16+ GB recommended); verify the chosen plan's actual region availability and disk size.
+4. Run scripts/check-chromium-build-host.sh before downloading source, then run scripts/build-chromium-android.sh and record host specs, exact upstream revision, commands, logs, duration, and APK SHA-256.
+5. Install and launch the unmodified proof APK on an Android 10+ device/emulator before porting MVM UI.
+6. Pin a tested Chromium revision and document how security updates will be merged, rebuilt, signed, and distributed.
+7. Only after the browser base is proven, plan the MVM branding/UI port, tab and bookmark storage, download handling, permissions, safe browsing strategy, licensing/notices, and release signing. Keep the existing app stable until then.
 
 ## Current verification status
 
 - The current MVM Browser Android APK and Release APK CI workflows passed for commit fe9b9b3.
 - The current application still uses Android System WebView.
 - A lightweight CI workflow now checks Bash syntax and guardrails only; it deliberately does not attempt an expensive Chromium build.
-- The Chromium build script is present but has not been executed here. It now checks minimum RAM/disk before checkout and uses fetch --nohooks so dependencies are installed before Chromium hooks run.
+- The Chromium build script is present but has not been executed here. It now checks minimum RAM/disk before checkout, supports an optional pinned revision, records the APK SHA-256, and uses fetch --nohooks so dependencies are installed before Chromium hooks run.
+- The read-only preflight supports configurable thresholds for CI path tests; its default requirements remain 8 GiB RAM and 100 GiB free disk.
+- A separate base-option note compares upstream Chromium, Cromite and GeckoView: docs/CHROMIUM_BASE_OPTIONS.md.
 - A read-only host diagnostic is available at scripts/check-chromium-build-host.sh; it does not download or install anything.
 - Before any public distribution, review docs/CHROMIUM_DISTRIBUTION_CHECKLIST.md for branding, notices, security updates, and build provenance.
 - No Chromium APK, benchmark, device test, or cloud-host availability is claimed by this research note.
