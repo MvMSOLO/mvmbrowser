@@ -68,6 +68,9 @@ jobs:
           grep -Fq 'SOURCE CHECK FAILED' scripts/check-chromium-source-clean.sh
           grep -Fq 'Commit, stash, or remove local source changes before building.' scripts/check-chromium-source-clean.sh
           grep -Fq 'chromium_source_tree_clean=true' scripts/build-chromium-android.sh
+          grep -Fq 'VERSION_FILE="$SRC_DIR/chrome/VERSION"' scripts/build-chromium-android.sh
+          grep -Fq 'chromium_version=$CHROMIUM_VERSION' scripts/build-chromium-android.sh
+          grep -Fq 'MAJOR.MINOR.BUILD.PATCH' scripts/verify-chromium-apk.sh
           grep -Fq 'FETCH_HEAD^{commit}' scripts/build-chromium-android.sh
           grep -Fq 'MVM-Chromium-arm64.metadata.txt' scripts/build-chromium-android.sh
           grep -Fq 'MVM-Chromium-arm64.args.gn' scripts/build-chromium-android.sh
@@ -252,6 +255,7 @@ jobs:
           host_os=Ubuntu-test
           host_arch=x86_64
           chromium_revision=0123456789abcdef0123456789abcdef01234567
+          chromium_version=155.0.8059.39
           depot_tools_revision=abcdef0123456789abcdef0123456789abcdef01
           target_os=android
           target_cpu=arm64
