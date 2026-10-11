@@ -44,6 +44,7 @@ class MainActivity : Activity() {
     private lateinit var address: EditText
     private lateinit var progress: ProgressBar
     private lateinit var webHost: FrameLayout
+    private lateinit var toolbarWeb: WebView
     private lateinit var tabsButton: TextView
     private val tabs = mutableListOf<BrowserTab>()
     private var activeIndex = 0
@@ -134,7 +135,7 @@ class MainActivity : Activity() {
         webHost = FrameLayout(this)
         root.addView(webHost, LinearLayout.LayoutParams(-1, 0, 1f))
 
-        val toolbar = WebView(this).apply {
+        toolbarWeb = WebView(this).apply {
             setBackgroundColor(Color.TRANSPARENT)
             overScrollMode = View.OVER_SCROLL_NEVER
             isVerticalScrollBarEnabled = false
@@ -145,7 +146,7 @@ class MainActivity : Activity() {
             addJavascriptInterface(BrowserBridge(), "BrowserBridge")
             loadUrl("file:///android_asset/toolbar.html")
         }
-        root.addView(toolbar, LinearLayout.LayoutParams(-1, dp(56)))
+        root.addView(toolbarWeb, LinearLayout.LayoutParams(-1, dp(56)))
         setContentView(root)
     }
 
@@ -399,6 +400,7 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         tabs.forEach { it.web.stopLoading(); it.web.destroy() }
         tabs.clear()
+        if (::toolbarWeb.isInitialized) { toolbarWeb.stopLoading(); toolbarWeb.destroy() }
         super.onDestroy()
     }
 }
