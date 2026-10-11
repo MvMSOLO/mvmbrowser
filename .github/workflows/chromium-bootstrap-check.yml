@@ -91,6 +91,9 @@ jobs:
           grep -Fq "github.ref == 'refs/heads/main'" .github/workflows/chromium-self-hosted-build.yml
           grep -Fq 'must be a full 40-character Git commit SHA' .github/workflows/chromium-self-hosted-build.yml
           grep -Fq 'compression-level: 0' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'GITHUB_STEP_SUMMARY' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'depot_tools_auto_update' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'MVM-Chromium-arm64.metadata.txt' .github/workflows/chromium-self-hosted-build.yml
           if grep -Eq '^  (push|pull_request|schedule):' .github/workflows/chromium-self-hosted-build.yml; then
             echo "The expensive Chromium build workflow must be manual-dispatch only." >&2
             exit 1
