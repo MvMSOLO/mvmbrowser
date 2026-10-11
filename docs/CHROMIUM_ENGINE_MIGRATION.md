@@ -7,6 +7,7 @@ MVM Browser's target engine is **a bundled, independently built Chromium browser
 ## Verified upstream constraints
 
 - Chromium's official Android build produces a complete browser APK with the `chrome_public_apk` target.
+- The official build guide states that `chrome_public_apk` has `minSdkVersion=29` (Android 10) for local development. MVM Browser currently has `minSdk 24`; this is a real compatibility decision, not just a UI port.
 - Chromium does not publish a supported Android AAR/SDK that can simply be added to this existing Kotlin app to embed the full Chrome engine.
 - The official WebLayer/WebEngine material describes a different integration model and should not be treated as a stable, self-contained Chromium SDK for this app.
 - Therefore, replacing `WebView` with a Gradle dependency is not a valid implementation plan.
@@ -28,7 +29,9 @@ References:
 
 A starter script is now committed at [`scripts/build-chromium-android.sh`](../scripts/build-chromium-android.sh). On a dedicated x86-64 Linux machine, it fetches Chromium, installs its official build dependencies, configures an arm64 build, and runs `autoninja -C out/MVM chrome_public_apk`. It expects at least 100 GB of free disk space and recommends 16 GB or more RAM. The source checkout can take hours; this is not suitable for a standard Android Gradle runner or a phone-only build environment.
 
-Run it with:
+Before any source download, run the no-cost environment report: `bash scripts/check-chromium-build-host.sh`. It prints CPU, RAM, free disk, and basic Linux-distribution details without installing packages, downloading source, or creating cloud resources.
+
+Run the build only on a host that meets the report's requirements, after confirming available disk/network and the intended cost:
 
 ```bash
 bash scripts/build-chromium-android.sh
@@ -38,4 +41,4 @@ The expected output is an unbranded Chromium APK named `MVM-Chromium-arm64.apk` 
 
 ## Important status
 
-The current MVM Browser app still uses Android WebView. The first technical milestone is a successful, reproducible upstream Chromium Android build. Only after that build is confirmed should we port MVM identity and features into the Chromium browser shell.
+The current MVM Browser app still uses Android WebView. The proof APK's Android 10+ minimum means we must explicitly decide whether the future Chromium-based MVM Browser will drop support for Android 7–9 or require substantial custom engineering to preserve those older devices. The first technical milestone is a successful, reproducible upstream Chromium Android build. Only after that build is confirmed should we port MVM identity and features into the Chromium browser shell.
