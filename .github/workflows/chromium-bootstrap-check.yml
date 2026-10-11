@@ -6,6 +6,9 @@ on:
     paths:
       - 'scripts/build-chromium-android.sh'
       - 'scripts/check-chromium-build-host.sh'
+      - 'scripts/report-chromium-upstream-status.py'
+      - 'tests/test_chromium_upstream_status.py'
+      - '.github/workflows/chromium-upstream-watch.yml'
       - '.github/workflows/chromium-bootstrap-check.yml'
   pull_request:
     paths:
@@ -28,6 +31,10 @@ jobs:
         run: |
           bash -n scripts/build-chromium-android.sh
           bash -n scripts/check-chromium-build-host.sh
+      - name: Validate and test upstream release report
+        run: |
+          python3 -m py_compile scripts/report-chromium-upstream-status.py
+          python3 -m unittest discover -s tests -p 'test_chromium_upstream_status.py' -v
       - name: Verify build guardrails
         run: |
           grep -Fq 'fetch --nohooks --no-history android' scripts/build-chromium-android.sh
