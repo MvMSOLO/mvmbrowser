@@ -37,9 +37,6 @@ Run the build only on a host that meets the report's requirements, after confirm
 
 ```bash
 bash scripts/check-chromium-build-host.sh
-bash scripts/check-chromium-source-clean.sh "$HOME/chromium-mvm/src"
-bash scripts/check-chromium-gclient-config.sh "$HOME/chromium-mvm/.gclient"
-bash scripts/read-chromium-version.sh "$HOME/chromium-mvm/src/chrome/VERSION"
 CHROMIUM_REVISION=<commit-or-ref> DEPOT_TOOLS_REVISION=<commit-or-ref> bash scripts/build-chromium-android.sh
 ```
 
