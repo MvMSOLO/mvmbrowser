@@ -27,7 +27,31 @@ internal object AdBlocker {
         "advertising.com",
         "smartadserver.com",
         "casalemedia.com",
-        "rubiconproject.com"
+        "rubiconproject.com",
+        "yieldmo.com",
+        "33across.com",
+        "bidswitch.net",
+        "bluekai.com",
+        "contextweb.com",
+        "demdex.net",
+        "eyeota.net",
+        "agkn.com",
+        "lijit.com",
+        "sharethrough.com",
+        "sovrn.com",
+        "spotx.tv",
+        "teads.tv",
+        "undertone.com",
+        "zemanta.com",
+        "mgid.com",
+        "revcontent.com",
+        "inmobi.com",
+        "applovin.com",
+        "adjust.com",
+        "appsflyer.com",
+        "branch.io",
+        "mixpanel.com",
+        "amplitude.com"
     )
 
     fun shouldBlock(host: String?): Boolean {
