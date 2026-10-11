@@ -28,7 +28,7 @@ MVM Browser is not yet running a bundled Chromium engine. Review the research do
 - [Read-only build-host checker](scripts/check-chromium-build-host.sh) — checks Linux architecture, effective RAM, and free disk without downloading source.
 - [Chromium source cleanliness checker](scripts/check-chromium-source-clean.sh) — rejects tracked/untracked checkout changes that could make build provenance ambiguous.
 - [Chromium build script](scripts/build-chromium-android.sh) — builds an upstream arm64 proof APK on a suitable Linux host and writes a metadata sidecar plus the exact GN args; it has not yet been run successfully in this environment.
-- [Offline APK verifier](scripts/verify-chromium-apk.sh) — checks APK ZIP integrity, Android manifest presence, APK/GN-args checksums, and source revision metadata without installing the APK.
+- [Offline APK verifier](scripts/verify-chromium-apk.sh) — checks APK ZIP integrity, manifest presence, APK/GN-args checksums, and source revision metadata; when `aapt` is available, it also validates package ID, minimum API, and arm64-v8a ABI.
 - [Android device smoke-test script](scripts/smoke-test-chromium-device.sh) — checks device authorization, Android API level, and ARM64 compatibility; installation requires `--install` plus interactive confirmation.
 - [Upstream version report script](scripts/report-chromium-upstream-status.py) — read-only parser for official Chrome Android release notes and public Cromite release/commit metadata, with a strict mode for incomplete reports.
 - [Weekly upstream resource watch](https://github.com/MvMSOLO/mvmbrowser/actions/workflows/chromium-upstream-watch.yml) — runs every Monday at 08:30 UTC, saves a 30-day report artifact, and can also be triggered manually.
