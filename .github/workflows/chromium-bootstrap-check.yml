@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/build-chromium-android.sh'
       - 'scripts/check-chromium-build-host.sh'
+      - 'scripts/check-chromium-source-clean.sh'
       - 'scripts/verify-chromium-apk.sh'
       - 'scripts/smoke-test-chromium-device.sh'
       - 'scripts/report-chromium-upstream-status.py'
@@ -39,6 +40,7 @@ jobs:
         run: |
           bash -n scripts/build-chromium-android.sh
           bash -n scripts/check-chromium-build-host.sh
+          bash -n scripts/check-chromium-source-clean.sh
           bash -n scripts/verify-chromium-apk.sh
           bash -n scripts/smoke-test-chromium-device.sh
       - name: Validate and test upstream release report
@@ -58,8 +60,9 @@ jobs:
           grep -Fq 'DEPOT_TOOLS_REVISION contains unsupported characters' scripts/build-chromium-android.sh
           grep -Fq 'DEPOT_TOOLS_UPDATE must be set to 0 or 1' scripts/build-chromium-android.sh
           grep -Fq 'depot_tools_auto_update=$DEPOT_TOOLS_UPDATE' scripts/build-chromium-android.sh
-          grep -Fq 'refusing a provenance-ambiguous build' scripts/build-chromium-android.sh
-          grep -Fq 'became dirty after dependency sync/hooks' scripts/build-chromium-android.sh
+          grep -Fq 'check-chromium-source-clean.sh' scripts/build-chromium-android.sh
+          grep -Fq 'SOURCE CHECK FAILED' scripts/check-chromium-source-clean.sh
+          grep -Fq 'Commit, stash, or remove local source changes before building.' scripts/check-chromium-source-clean.sh
           grep -Fq 'chromium_source_tree_clean=true' scripts/build-chromium-android.sh
           grep -Fq 'FETCH_HEAD^{commit}' scripts/build-chromium-android.sh
           grep -Fq 'MVM-Chromium-arm64.metadata.txt' scripts/build-chromium-android.sh
@@ -89,6 +92,37 @@ jobs:
             exit 1
           fi
           grep -Fq 'RESULT: NOT READY' preflight-blocked.txt
+
+      - name: Test Chromium source cleanliness guard
+        shell: bash
+        run: |
+          clean_root="$RUNNER_TEMP/chromium-source-clean-test"
+          mkdir -p "$clean_root"
+          git -C "$clean_root" init -q
+          git -C "$clean_root" config user.name "CI Test"
+          git -C "$clean_root" config user.email "ci-test@example.invalid"
+          printf 'clean baseline\n' > "$clean_root/README.md"
+          git -C "$clean_root" add README.md
+          git -C "$clean_root" commit -q -m 'initial test fixture'
+
+          bash scripts/check-chromium-source-clean.sh "$clean_root" > source-clean-pass.txt
+          grep -Fq 'SOURCE CHECK PASSED' source-clean-pass.txt
+          grep -Eq 'Chromium revision: [0-9a-f]{40}' source-clean-pass.txt
+
+          printf 'untracked content\n' > "$clean_root/untracked.txt"
+          if bash scripts/check-chromium-source-clean.sh "$clean_root" > source-untracked-fail.txt 2>&1; then
+            echo "Expected an untracked file to fail the source cleanliness check." >&2
+            exit 1
+          fi
+          grep -Fq 'SOURCE CHECK FAILED' source-untracked-fail.txt
+
+          rm "$clean_root/untracked.txt"
+          printf 'modified content\n' >> "$clean_root/README.md"
+          if bash scripts/check-chromium-source-clean.sh "$clean_root" > source-modified-fail.txt 2>&1; then
+            echo "Expected a tracked modification to fail the source cleanliness check." >&2
+            exit 1
+          fi
+          grep -Fq 'SOURCE CHECK FAILED' source-modified-fail.txt
 
       - name: Verify build script stops before network work on insufficient disk
         shell: bash
