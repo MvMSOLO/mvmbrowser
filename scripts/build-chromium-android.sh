@@ -26,6 +26,25 @@ if ! command -v git >/dev/null 2>&1 || ! command -v python3 >/dev/null 2>&1; the
 fi
 
 mkdir -p "$CHROMIUM_ROOT"
+CHROMIUM_ROOT="$(cd "$CHROMIUM_ROOT" && pwd)"
+SRC_DIR="$CHROMIUM_ROOT/src"
+
+# Chromium's checkout and build outputs are large. Warn early instead of
+# letting a multi-hour fetch fail only when the disk fills up.
+FREE_KB="$(df -Pk "$CHROMIUM_ROOT" | awk 'NR==2 {print $4}')"
+FREE_GB="$((FREE_KB / 1024 / 1024))"
+if (( FREE_GB < 100 )); then
+  echo "WARNING: only ${FREE_GB} GiB free at $CHROMIUM_ROOT; Chromium Android builds commonly need 100+ GiB." >&2
+  echo "Free disk space before continuing. The script will not stop automatically." >&2
+fi
+
+if [[ -r /proc/meminfo ]]; then
+  MEM_KB="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
+  MEM_GIB="$((MEM_KB / 1024 / 1024))"
+  if (( MEM_GIB < 8 )); then
+    echo "WARNING: detected ${MEM_GIB} GiB RAM; Chromium recommends at least 8 GiB and 16+ GiB is preferable." >&2
+  fi
+fi
 
 if [[ ! -d "$DEPOT_TOOLS/.git" ]]; then
   echo "==> Downloading Chromium depot_tools"
@@ -80,7 +99,7 @@ if [[ -z "$APK" || ! -f "$APK" ]]; then
   exit 1
 fi
 
-DEST="$CHROMIUM_ROOT/MVM-Chromium-arm64-debug.apk"
+DEST="$CHROMIUM_ROOT/MVM-Chromium-arm64.apk"
 cp "$APK" "$DEST"
 echo
 echo "SUCCESS: Upstream Chromium Android browser built."
