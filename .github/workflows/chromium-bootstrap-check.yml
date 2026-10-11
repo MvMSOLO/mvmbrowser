@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/build-chromium-android.sh'
       - 'scripts/read-chromium-version.sh'
+      - 'scripts/check-chromium-gclient-config.sh'
       - 'scripts/check-chromium-build-host.sh'
       - 'scripts/check-chromium-source-clean.sh'
       - 'scripts/verify-chromium-apk.sh'
@@ -20,6 +21,7 @@ on:
     paths:
       - 'scripts/build-chromium-android.sh'
       - 'scripts/read-chromium-version.sh'
+      - 'scripts/check-chromium-gclient-config.sh'
       - 'scripts/check-chromium-build-host.sh'
       - 'scripts/check-chromium-source-clean.sh'
       - 'scripts/verify-chromium-apk.sh'
@@ -46,6 +48,7 @@ jobs:
         run: |
           bash -n scripts/build-chromium-android.sh
           bash -n scripts/read-chromium-version.sh
+          bash -n scripts/check-chromium-gclient-config.sh
           bash -n scripts/check-chromium-build-host.sh
           bash -n scripts/check-chromium-source-clean.sh
           bash -n scripts/verify-chromium-apk.sh
@@ -91,6 +94,39 @@ jobs:
             exit 1
           fi
           grep -Fq 'missing or unreadable' version-missing.txt
+
+      - name: Test Chromium gclient Android target config
+        shell: bash
+        run: |
+          test_root="$RUNNER_TEMP/chromium-gclient-config-test"
+          mkdir -p "$test_root"
+
+          cat > "$test_root/valid.gclient" <<'GCLIENT'
+          solutions = [{"name": "src"}]
+          target_os = ["linux", "android"]
+          GCLIENT
+          bash scripts/check-chromium-gclient-config.sh "$test_root/valid.gclient" > gclient-pass.txt
+          grep -Fq 'CONFIG CHECK PASSED' gclient-pass.txt
+
+          cat > "$test_root/linux-only.gclient" <<'GCLIENT'
+          solutions = [{"name": "src"}]
+          target_os = ["linux"]
+          GCLIENT
+          if bash scripts/check-chromium-gclient-config.sh "$test_root/linux-only.gclient" > gclient-linux-fail.txt 2>&1; then
+            echo "Expected a Linux-only .gclient file to fail." >&2
+            exit 1
+          fi
+          grep -Fq "Android is missing" gclient-linux-fail.txt
+
+          cat > "$test_root/dynamic.gclient" <<'GCLIENT'
+          supported_platforms = ["android"]
+          target_os = supported_platforms
+          GCLIENT
+          if bash scripts/check-chromium-gclient-config.sh "$test_root/dynamic.gclient" > gclient-dynamic-fail.txt 2>&1; then
+            echo "Expected a computed target_os value to fail the safe-literal check." >&2
+            exit 1
+          fi
+          grep -Fq 'target_os must be a literal list or tuple' gclient-dynamic-fail.txt
       - name: Verify build guardrails
         run: |
           grep -Fq 'fetch --nohooks --no-history android' scripts/build-chromium-android.sh
@@ -110,6 +146,9 @@ jobs:
           grep -Fq 'chromium_source_tree_clean=true' scripts/build-chromium-android.sh
           grep -Fq 'VERSION_FILE="$SRC_DIR/chrome/VERSION"' scripts/build-chromium-android.sh
           grep -Fq 'read-chromium-version.sh' scripts/build-chromium-android.sh
+          grep -Fq 'check-chromium-gclient-config.sh' scripts/build-chromium-android.sh
+          grep -Fq 'CONFIG CHECK PASSED' scripts/check-chromium-gclient-config.sh
+          grep -Fq 'ast.literal_eval' scripts/check-chromium-gclient-config.sh
           grep -Fq 'MAJOR, MINOR, BUILD and PATCH fields' scripts/read-chromium-version.sh
           grep -Fq 'chromium_version=$CHROMIUM_VERSION' scripts/build-chromium-android.sh
           grep -Fq 'MAJOR.MINOR.BUILD.PATCH' scripts/verify-chromium-apk.sh
