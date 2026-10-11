@@ -98,6 +98,7 @@ jobs:
             echo "| Field | Value |"
             echo "| --- | --- |"
             echo "| Chromium revision | $(value chromium_revision) |"
+            echo "| Chromium version | $(value chromium_version) |"
             echo "| depot_tools revision | $(value depot_tools_revision) |"
             echo "| depot_tools auto-update | $(value depot_tools_auto_update) |"
             echo "| Target | $(value target_os) / $(value target_cpu) |"
