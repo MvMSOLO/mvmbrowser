@@ -21,6 +21,12 @@ ALLOW_UNKNOWN_MEMORY="${ALLOW_UNKNOWN_MEMORY:-0}"
 SRC_DIR="$CHROMIUM_ROOT/src"
 OUT_DIR="out/MVM"
 
+# Chromium's own checkout instructions require paths without whitespace.
+if [[ "$CHROMIUM_ROOT" =~ [[:space:]] || "$DEPOT_TOOLS" =~ [[:space:]] ]]; then
+  echo "ERROR: Chromium and depot_tools paths must not contain whitespace." >&2
+  exit 2
+fi
+
 if ! [[ "$CHROMIUM_MIN_FREE_GB" =~ ^[0-9]+$ ]] || (( CHROMIUM_MIN_FREE_GB < 1 )); then
   echo "ERROR: CHROMIUM_MIN_FREE_GB must be a positive whole number." >&2
   exit 2
@@ -50,10 +56,6 @@ fi
 mkdir -p "$CHROMIUM_ROOT"
 CHROMIUM_ROOT="$(cd "$CHROMIUM_ROOT" && pwd)"
 SRC_DIR="$CHROMIUM_ROOT/src"
-if [[ "$CHROMIUM_ROOT" =~ [[:space:]] || "$DEPOT_TOOLS" =~ [[:space:]] ]]; then
-  echo "ERROR: Chromium and depot_tools paths must not contain whitespace." >&2
-  exit 2
-fi
 
 # Fail before a large checkout if the host cannot meet Chromium's
 # documented minimums. An override is available only for an intentional test.
