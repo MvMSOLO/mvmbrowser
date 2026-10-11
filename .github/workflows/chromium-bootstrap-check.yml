@@ -189,6 +189,22 @@ jobs:
             exit 1
           fi
 
+          # Relative paths must be rejected when the caller's current directory
+          # contains whitespace, even if the supplied variable itself does not.
+          spaced_cwd="$RUNNER_TEMP/chromium cwd with spaces"
+          mkdir -p "$spaced_cwd"
+          if (cd "$spaced_cwd" && CHROMIUM_ROOT=relative-workspace \
+            bash "$GITHUB_WORKSPACE/scripts/build-chromium-android.sh" \
+              > "$RUNNER_TEMP/relative-path-spaces.txt" 2>&1); then
+            echo "Expected a relative path under a whitespace-containing CWD to be rejected." >&2
+            exit 1
+          fi
+          grep -Fq 'paths must not contain whitespace' "$RUNNER_TEMP/relative-path-spaces.txt"
+          if [[ -e "$spaced_cwd/relative-workspace" ]]; then
+            echo "Build script created a relative workspace before resolving and rejecting its path." >&2
+            exit 1
+          fi
+
       - name: Test offline Chromium APK provenance verifier
         shell: bash
         run: |
