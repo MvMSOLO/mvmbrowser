@@ -176,6 +176,7 @@ if [[ ! -d "$SRC_DIR/.git" ]]; then
   fetch --nohooks --no-history android
 fi
 
+bash "$SCRIPT_DIR/check-chromium-gclient-config.sh" "$CHROMIUM_ROOT/.gclient"
 cd "$SRC_DIR"
 
 if [[ -n "$CHROMIUM_REVISION" ]]; then
