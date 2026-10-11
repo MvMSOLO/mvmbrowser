@@ -56,7 +56,12 @@ jobs:
         shell: bash
         run: |
           TAG="mvm-browser-build-${RUN_NUMBER}"
-          gh release create "$TAG" "$APK_PATH#MVM-Browser.apk" \
+          RELEASE_APK="MVM-Browser.apk"
+          cp "$APK_PATH" "$RELEASE_APK"
+          test -s "$RELEASE_APK"
+          echo "Release asset name: $RELEASE_APK"
+          sha256sum "$RELEASE_APK"
+          gh release create "$TAG" "$RELEASE_APK" \
             --repo "$REPOSITORY" \
             --title "MVM Browser APK build ${RUN_NUMBER}" \
-            --notes "Automatically built from commit ${GITHUB_SHA}. This release contains the current MVM Browser Android APK. The current browser rendering engine is Android System WebView; bundled Chromium integration is still in progress."
+            --notes "Automatically built from commit ${GITHUB_SHA}. This release contains the current MVM Browser Android APK as MVM-Browser.apk. The current browser rendering engine is Android System WebView; bundled Chromium integration is still in progress."
