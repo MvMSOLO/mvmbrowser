@@ -8,6 +8,14 @@ import org.junit.Test
 
 class LocalFilePolicyTest {
     @Test
+    fun allowsBundledAssetSubpathsWithoutTraversal() {
+        assertTrue(LocalFilePolicy.isAllowedBundledAssetPath("/android_asset/styles/home.css"))
+        assertFalse(LocalFilePolicy.isAllowedBundledAssetPath("/android_asset/../data/private.xml"))
+        assertFalse(LocalFilePolicy.isAllowedBundledAssetPath("/data/data/com.example/private.xml"))
+        assertFalse(LocalFilePolicy.isAllowedBundledAssetPath("/android_asset/./secret.txt"))
+    }
+
+    @Test
     fun allowsExistingMhtmlInsideSavedDirectory() {
         val root = Files.createTempDirectory("mvm-offline").toFile()
         val archive = File(root, "example.com.mhtml").apply { writeText("archive") }
