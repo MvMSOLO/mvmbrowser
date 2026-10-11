@@ -38,7 +38,15 @@ bash scripts/check-chromium-build-host.sh
 CHROMIUM_REVISION=<commit-or-ref> bash scripts/build-chromium-android.sh
 ```
 
-At completion, the script reports the actual Chromium commit, `depot_tools` commit, GN-args SHA-256, and APK SHA-256. It also writes `MVM-Chromium-arm64.metadata.txt` next to the APK with the host OS/architecture and build provenance. When `CHROMIUM_REVISION` is supplied, the script resolves it to an exact commit (using `FETCH_HEAD` for remotely fetched refs) before syncing dependencies. Save the metadata file and build logs together when comparing repeat builds.
+At completion, the script reports the actual Chromium commit, `depot_tools` commit, GN-args SHA-256, and APK SHA-256. It also writes `MVM-Chromium-arm64.metadata.txt` and copies the effective GN args to `MVM-Chromium-arm64.args.gn` next to the APK. When `CHROMIUM_REVISION` is supplied, the script resolves it to an exact commit (using `FETCH_HEAD` for remotely fetched refs) before syncing dependencies. Save the APK, metadata, GN args file, and build logs together when comparing repeat builds.
+
+Before any installation attempt, run the offline verifier against the output:
+
+```bash
+bash scripts/verify-chromium-apk.sh
+```
+
+The verifier checks the APK ZIP integrity, both SHA-256 digests, target ABI/OS, and full Chromium/`depot_tools` commit IDs. It does not download, install, or launch anything. A successful verifier result confirms local artifact integrity and provenance fields, not that Chromium will launch correctly on a device.
 
 The expected output is an unbranded Chromium APK named `MVM-Chromium-arm64.apk` under the chosen Chromium workspace. The script requests noninteractive dependency installation, checks that sudo is usable before a large checkout for non-root users, and syncs dependencies without running hooks twice. The script has been committed, but it has **not** been executed in this environment; do not treat the APK as built or tested yet.
 
