@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:label="MVM Browser"
         android:icon="@drawable/mvm_launcher"
         android:roundIcon="@drawable/mvm_launcher"
