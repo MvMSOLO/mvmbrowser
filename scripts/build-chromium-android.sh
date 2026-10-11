@@ -14,6 +14,8 @@ set -Eeuo pipefail
 CHROMIUM_ROOT="${CHROMIUM_ROOT:-$HOME/chromium-mvm}"
 DEPOT_TOOLS="${DEPOT_TOOLS:-$HOME/depot_tools}"
 CHROMIUM_REVISION="${CHROMIUM_REVISION:-}"
+DEPOT_TOOLS_REVISION="${DEPOT_TOOLS_REVISION:-}"
+DEPOT_TOOLS_UPDATE="${DEPOT_TOOLS_UPDATE:-1}"
 CHROMIUM_MIN_FREE_GB="${CHROMIUM_MIN_FREE_GB:-100}"
 ALLOW_LOW_DISK="${ALLOW_LOW_DISK:-0}"
 ALLOW_LOW_MEMORY="${ALLOW_LOW_MEMORY:-0}"
@@ -40,6 +42,14 @@ for flag_name in ALLOW_LOW_DISK ALLOW_LOW_MEMORY ALLOW_UNKNOWN_MEMORY; do
 done
 if [[ -n "$CHROMIUM_REVISION" ]] && ! [[ "$CHROMIUM_REVISION" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
   echo "ERROR: CHROMIUM_REVISION contains unsupported characters." >&2
+  exit 2
+fi
+if [[ -n "$DEPOT_TOOLS_REVISION" ]] && ! [[ "$DEPOT_TOOLS_REVISION" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
+  echo "ERROR: DEPOT_TOOLS_REVISION contains unsupported characters." >&2
+  exit 2
+fi
+if [[ "$DEPOT_TOOLS_UPDATE" != "0" && "$DEPOT_TOOLS_UPDATE" != "1" ]]; then
+  echo "ERROR: DEPOT_TOOLS_UPDATE must be set to 0 or 1." >&2
   exit 2
 fi
 
@@ -131,8 +141,20 @@ if [[ ! -d "$DEPOT_TOOLS/.git" ]]; then
   git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git "$DEPOT_TOOLS"
 fi
 
+if [[ -n "$DEPOT_TOOLS_REVISION" ]]; then
+  echo "==> Resolving and pinning depot_tools revision: $DEPOT_TOOLS_REVISION"
+  if [[ "$DEPOT_TOOLS_REVISION" =~ ^[0-9a-fA-F]{40}$ ]] && git -C "$DEPOT_TOOLS" cat-file -e "${DEPOT_TOOLS_REVISION}^{commit}" 2>/dev/null; then
+    PINNED_DEPOT_TOOLS="$(git -C "$DEPOT_TOOLS" rev-parse --verify "${DEPOT_TOOLS_REVISION}^{commit}")"
+  else
+    git -C "$DEPOT_TOOLS" fetch --no-tags origin "$DEPOT_TOOLS_REVISION"
+    PINNED_DEPOT_TOOLS="$(git -C "$DEPOT_TOOLS" rev-parse --verify 'FETCH_HEAD^{commit}')"
+  fi
+  git -C "$DEPOT_TOOLS" checkout --detach "$PINNED_DEPOT_TOOLS"
+  DEPOT_TOOLS_UPDATE=0
+fi
+
 export PATH="$DEPOT_TOOLS:$PATH"
-export DEPOT_TOOLS_UPDATE=1
+export DEPOT_TOOLS_UPDATE
 
 if [[ ! -d "$SRC_DIR/.git" ]]; then
   if [[ -e "$SRC_DIR" ]]; then
@@ -148,9 +170,9 @@ cd "$SRC_DIR"
 
 if [[ -n "$CHROMIUM_REVISION" ]]; then
   echo "==> Resolving and pinning Chromium revision: $CHROMIUM_REVISION"
-  # Reuse a commit already present in the checkout; otherwise fetch the
-  # requested branch, tag, or commit and resolve the fetched object explicitly.
-  if git rev-parse --verify --quiet "${CHROMIUM_REVISION}^{commit}" >/dev/null; then
+  # Reuse a full commit already available locally. Branch/tag names are fetched
+  # explicitly and resolved through FETCH_HEAD, so stale local branches do not win.
+  if [[ "$CHROMIUM_REVISION" =~ ^[0-9a-fA-F]{40}$ ]] && git cat-file -e "${CHROMIUM_REVISION}^{commit}" 2>/dev/null; then
     PINNED_REVISION="$(git rev-parse --verify "${CHROMIUM_REVISION}^{commit}")"
   else
     git fetch --no-tags origin "$CHROMIUM_REVISION"
@@ -216,6 +238,7 @@ host_os=$HOST_OS
 host_arch=$HOST_ARCH
 chromium_revision=$BUILD_REVISION
 depot_tools_revision=$DEPOT_TOOLS_REVISION_ACTUAL
+depot_tools_auto_update=$DEPOT_TOOLS_UPDATE
 target_os=android
 target_cpu=arm64
 gn_args_file=$(basename "$ARGS_COPY")
