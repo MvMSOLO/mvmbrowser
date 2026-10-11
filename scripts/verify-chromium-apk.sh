@@ -60,8 +60,11 @@ grep -Eq '^[[:space:]]*target_cpu[[:space:]]*=[[:space:]]*"arm64"[[:space:]]*$' 
   || fail "GN args sidecar does not declare target_cpu = arm64."
 
 unzip -tq "$APK" >/dev/null || fail "APK ZIP integrity test failed."
+if ! unzip -Z1 "$APK" | grep -Fxq 'AndroidManifest.xml'; then
+  fail "APK archive does not contain AndroidManifest.xml at its root."
+fi
 
-echo "VERIFY PASSED: APK, GN args, metadata and ZIP integrity agree."
+echo "VERIFY PASSED: APK structure, GN args, metadata and ZIP integrity agree."
 echo "APK: $APK"
 echo "Chromium revision: $CHROMIUM_REVISION"
 echo "depot_tools revision: $DEPOT_TOOLS_REVISION"
