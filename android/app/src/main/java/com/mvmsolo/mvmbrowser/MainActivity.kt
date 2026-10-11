@@ -2,6 +2,7 @@ package com.mvmsolo.mvmbrowser
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.DownloadManager
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
@@ -9,12 +10,14 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Build
+import android.os.Environment
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
+import android.webkit.URLUtil
 import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -224,6 +227,41 @@ class MainActivity : Activity() {
             }
             override fun onReceivedTitle(view: WebView, title: String?) {
                 tabFor(view)?.title = title?.take(80) ?: "New tab"
+            }
+        }
+
+        // Handle file downloads explicitly; WebView does not download files by itself.
+        web.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+            try {
+                val uri = Uri.parse(url)
+                if (uri.scheme != "https" && uri.scheme != "http") {
+                    toast("Only web downloads are supported")
+                    return@setDownloadListener
+                }
+                val fileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
+                    .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                    .take(180)
+                    .ifBlank { "download" }
+                val request = DownloadManager.Request(uri).apply {
+                    setTitle(fileName)
+                    setDescription("Downloading with MVM Browser")
+                    setMimeType(mimeType)
+                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    setDestinationInExternalFilesDir(
+                        this@MainActivity,
+                        Environment.DIRECTORY_DOWNLOADS,
+                        fileName
+                    )
+                    addRequestHeader("User-Agent", userAgent ?: web.settings.userAgentString)
+                    CookieManager.getInstance().getCookie(url)?.let { addRequestHeader("Cookie", it) }
+                    setAllowedOverMetered(true)
+                    setAllowedOverRoaming(false)
+                }
+                val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                manager.enqueue(request)
+                toast("Download started: $fileName")
+            } catch (_: Exception) {
+                toast("Could not start download")
             }
         }
     }
