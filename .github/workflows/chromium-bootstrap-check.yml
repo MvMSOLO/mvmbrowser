@@ -8,12 +8,17 @@ on:
       - 'scripts/check-chromium-build-host.sh'
       - 'scripts/report-chromium-upstream-status.py'
       - 'tests/test_chromium_upstream_status.py'
+      - '.github/workflows/chromium-build-script-check.yml'
       - '.github/workflows/chromium-upstream-watch.yml'
       - '.github/workflows/chromium-bootstrap-check.yml'
   pull_request:
     paths:
       - 'scripts/build-chromium-android.sh'
       - 'scripts/check-chromium-build-host.sh'
+      - 'scripts/report-chromium-upstream-status.py'
+      - 'tests/test_chromium_upstream_status.py'
+      - '.github/workflows/chromium-build-script-check.yml'
+      - '.github/workflows/chromium-upstream-watch.yml'
       - '.github/workflows/chromium-bootstrap-check.yml'
 
 permissions:
@@ -40,6 +45,7 @@ jobs:
           grep -Fq 'fetch --nohooks --no-history android' scripts/build-chromium-android.sh
           grep -Fq 'CHROMIUM_MIN_FREE_GB=' scripts/build-chromium-android.sh
           grep -Fq 'CHROMIUM_MIN_FREE_GB must be a positive whole number' scripts/build-chromium-android.sh
+          grep -Fq 'must not contain whitespace' scripts/build-chromium-android.sh
           grep -Fq 'ALLOW_UNKNOWN_MEMORY=1' scripts/build-chromium-android.sh
           grep -Fq 'CHROMIUM_REVISION contains unsupported characters' scripts/build-chromium-android.sh
           grep -Fq 'CHROMIUM_REVISION=' scripts/build-chromium-android.sh
@@ -47,6 +53,7 @@ jobs:
           grep -Fq '/sys/fs/cgroup/memory.max' scripts/check-chromium-build-host.sh
           grep -Fq 'chrome_public_apk' scripts/build-chromium-android.sh
           grep -Fq 'APK_SHA256=' scripts/build-chromium-android.sh
+          grep -Fq 'depot_tools revision:' scripts/build-chromium-android.sh
           grep -Fq 'depot_tools revision:' scripts/build-chromium-android.sh
           grep -Fq 'install-build-deps.sh --no-prompt' scripts/build-chromium-android.sh
           grep -Fq 'sudo -n true' scripts/build-chromium-android.sh
@@ -100,3 +107,15 @@ jobs:
             exit 1
           fi
           grep -Fq 'CHROMIUM_REVISION contains unsupported characters' invalid-revision.txt
+
+          spaced_root="$RUNNER_TEMP/mvm chromium invalid path"
+          if CHROMIUM_ROOT="$spaced_root" \
+            bash scripts/build-chromium-android.sh > spaced-path.txt 2>&1; then
+            echo "Expected a Chromium workspace path containing spaces to be rejected." >&2
+            exit 1
+          fi
+          grep -Fq 'must not contain whitespace' spaced-path.txt
+          if [[ -e "$spaced_root" ]]; then
+            echo "Build script created an invalid workspace before rejecting its path." >&2
+            exit 1
+          fi
