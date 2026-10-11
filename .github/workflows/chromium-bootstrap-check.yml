@@ -39,6 +39,9 @@ jobs:
         run: |
           grep -Fq 'fetch --nohooks --no-history android' scripts/build-chromium-android.sh
           grep -Fq 'CHROMIUM_MIN_FREE_GB=' scripts/build-chromium-android.sh
+          grep -Fq 'CHROMIUM_MIN_FREE_GB must be a positive whole number' scripts/build-chromium-android.sh
+          grep -Fq 'ALLOW_UNKNOWN_MEMORY=1' scripts/build-chromium-android.sh
+          grep -Fq 'CHROMIUM_REVISION contains unsupported characters' scripts/build-chromium-android.sh
           grep -Fq 'CHROMIUM_REVISION=' scripts/build-chromium-android.sh
           grep -Fq '/sys/fs/cgroup/memory.max' scripts/build-chromium-android.sh
           grep -Fq '/sys/fs/cgroup/memory.max' scripts/check-chromium-build-host.sh
@@ -78,3 +81,22 @@ jobs:
             echo "Build script started a source fetch despite a failed preflight." >&2
             exit 1
           fi
+
+      - name: Reject invalid build configuration before network work
+        shell: bash
+        run: |
+          if CHROMIUM_MIN_FREE_GB=not-a-number \
+            CHROMIUM_ROOT="$RUNNER_TEMP/mvm-invalid-threshold" \
+            bash scripts/build-chromium-android.sh > invalid-threshold.txt 2>&1; then
+            echo "Expected invalid disk threshold to be rejected." >&2
+            exit 1
+          fi
+          grep -Fq 'CHROMIUM_MIN_FREE_GB must be a positive whole number' invalid-threshold.txt
+
+          if CHROMIUM_REVISION='--help' \
+            CHROMIUM_ROOT="$RUNNER_TEMP/mvm-invalid-revision" \
+            bash scripts/build-chromium-android.sh > invalid-revision.txt 2>&1; then
+            echo "Expected an option-like revision to be rejected." >&2
+            exit 1
+          fi
+          grep -Fq 'CHROMIUM_REVISION contains unsupported characters' invalid-revision.txt
