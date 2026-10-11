@@ -19,6 +19,8 @@ References:
 
 ## Implementation path
 
+The current app's capability-by-capability work is tracked in [CHROMIUM_FEATURE_PORT_MATRIX.md](CHROMIUM_FEATURE_PORT_MATRIX.md). Use it as the acceptance checklist for the downstream shell port; the existing WebView features are not automatically inherited by the proof APK.
+
 1. **Choose the Chromium base:** use the upstream Chromium Android browser source as the engine/browser base, or a maintained open-source Chromium browser fork whose build and redistribution terms fit the project. Do not vendor an imaginary AAR.
 2. **Prove the build environment:** build an unmodified Android Chromium APK in a dedicated Linux environment before porting MVM UI. Chromium's checkout and build are far larger than a normal Gradle project; the current Android APK CI workflow is not sufficient by itself.
 3. **Create a reproducible build:** pin the upstream revision, build tools, target ABI(s), and security-update procedure.
