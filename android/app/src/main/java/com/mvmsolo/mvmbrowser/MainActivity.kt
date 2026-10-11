@@ -44,7 +44,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
-private const val HOME_ASSET_URL = HOME_ASSET_URL
+private const val HOME_ASSET_URL = "file:///android_asset/home.html"
 
 class MainActivity : Activity() {
     private val bg = Color.rgb(7, 10, 16)
@@ -363,7 +363,7 @@ class MainActivity : Activity() {
 
     private fun toggleBookmark() {
         val url = active()?.url ?: return
-        if (url.startsWith("file:///android_asset/")) { toast("Open a website first"); return }
+        if (isBundledHomeUrl(url)) { toast("Open a website first"); return }
         val key = "bookmarks"
         val items = prefs.getStringSet(key, emptySet())?.toMutableSet() ?: mutableSetOf()
         if (items.remove(url)) toast("Bookmark removed") else { items.add(url); toast("Bookmark saved") }
