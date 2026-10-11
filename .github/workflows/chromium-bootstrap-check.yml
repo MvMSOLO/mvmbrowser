@@ -37,3 +37,16 @@ jobs:
           grep -Fq '/sys/fs/cgroup/memory.max' scripts/check-chromium-build-host.sh
           grep -Fq 'chrome_public_apk' scripts/build-chromium-android.sh
           grep -Fq 'APK_SHA256=' scripts/build-chromium-android.sh
+      - name: Test preflight pass and fail paths
+        shell: bash
+        run: |
+          CHROMIUM_MIN_RAM_GIB=1 CHROMIUM_MIN_FREE_GB=1 \
+            bash scripts/check-chromium-build-host.sh > preflight-pass.txt
+          grep -Fq 'RESULT: basic requirements pass.' preflight-pass.txt
+
+          if CHROMIUM_MIN_RAM_GIB=1 CHROMIUM_MIN_FREE_GB=999999 \
+            bash scripts/check-chromium-build-host.sh > preflight-blocked.txt 2>&1; then
+            echo "Expected the preflight to block an impossible disk threshold." >&2
+            exit 1
+          fi
+          grep -Fq 'RESULT: NOT READY' preflight-blocked.txt
