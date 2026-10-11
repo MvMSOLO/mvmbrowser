@@ -29,21 +29,37 @@ mkdir -p "$CHROMIUM_ROOT"
 CHROMIUM_ROOT="$(cd "$CHROMIUM_ROOT" && pwd)"
 SRC_DIR="$CHROMIUM_ROOT/src"
 
-# Chromium's checkout and build outputs are large. Warn early instead of
-# letting a multi-hour fetch fail only when the disk fills up.
+# Fail before a large checkout if the host cannot meet Chromium's
+# documented minimums. An override is available only for an intentional test.
 FREE_KB="$(df -Pk "$CHROMIUM_ROOT" | awk 'NR==2 {print $4}')"
 FREE_GB="$((FREE_KB / 1024 / 1024))"
-if (( FREE_GB < 100 )); then
-  echo "WARNING: only ${FREE_GB} GiB free at $CHROMIUM_ROOT; Chromium Android builds commonly need 100+ GiB." >&2
-  echo "Free disk space before continuing. The script will not stop automatically." >&2
+CHROMIUM_MIN_FREE_GB="${CHROMIUM_MIN_FREE_GB:-100}"
+if (( FREE_GB < CHROMIUM_MIN_FREE_GB )); then
+  echo "ERROR: only ${FREE_GB} GiB free at $CHROMIUM_ROOT; need at least ${CHROMIUM_MIN_FREE_GB} GiB." >&2
+  echo "Chromium's official Android build guide requires at least 100 GB free." >&2
+  echo "Free disk space or explicitly set ALLOW_LOW_DISK=1 to bypass this guard." >&2
+  if [[ "${ALLOW_LOW_DISK:-0}" != "1" ]]; then
+    exit 2
+  fi
 fi
 
 if [[ -r /proc/meminfo ]]; then
   MEM_KB="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
   MEM_GIB="$((MEM_KB / 1024 / 1024))"
   if (( MEM_GIB < 8 )); then
-    echo "WARNING: detected ${MEM_GIB} GiB RAM; Chromium recommends at least 8 GiB and 16+ GiB is preferable." >&2
+    echo "ERROR: detected ${MEM_GIB} GiB RAM; Chromium's documented minimum is 8 GiB." >&2
+    echo "16+ GiB is highly recommended. Set ALLOW_LOW_MEMORY=1 only for an intentional test." >&2
+    if [[ "${ALLOW_LOW_MEMORY:-0}" != "1" ]]; then
+      exit 2
+    fi
+  elif (( MEM_GIB < 16 )); then
+    echo "WARNING: detected ${MEM_GIB} GiB RAM; more than 16 GiB is highly recommended." >&2
   fi
+fi
+
+if (( EUID != 0 )) && ! command -v sudo >/dev/null 2>&1; then
+  echo "ERROR: sudo is required to install Chromium build dependencies." >&2
+  exit 2
 fi
 
 if [[ ! -d "$DEPOT_TOOLS/.git" ]]; then
@@ -61,13 +77,17 @@ if [[ ! -d "$SRC_DIR/.git" ]]; then
   fi
   echo "==> Fetching Chromium Android source (large download; may take hours)"
   cd "$CHROMIUM_ROOT"
-  fetch --no-history android
+  fetch --nohooks --no-history android
 fi
 
 cd "$SRC_DIR"
 
 echo "==> Installing official Chromium Linux/Android build dependencies"
-sudo build/install-build-deps.sh
+if (( EUID == 0 )); then
+  build/install-build-deps.sh
+else
+  sudo build/install-build-deps.sh
+fi
 
 echo "==> Syncing Chromium dependencies and hooks"
 gclient sync
