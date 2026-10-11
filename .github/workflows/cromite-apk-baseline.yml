@@ -36,13 +36,7 @@ jobs:
           SHA-256: 9db12af1af021f42b4371e76d0e9fe476a7085bbbbc76bc410a538d028bf6071
           This is an upstream artifact, not an MVM-branded build.
           EOF
-          {
-            echo '### Upstream Cromite APK baseline downloaded'
-            echo '- SHA-256 matches the pinned official release asset.'
-            echo '- Next step inspects package metadata and APK signing certificate.'
-            echo '- No APK was committed to the Git repository.'
-          } >> "$GITHUB_STEP_SUMMARY"
-      - name: Inspect APK package metadata and signing certificate
+      - name: Inspect and assert APK package metadata and signing certificate
         shell: bash
         run: |
           set -euo pipefail
@@ -54,12 +48,20 @@ jobs:
             echo 'Android SDK build-tools (aapt and apksigner) not found on runner.' >&2
             exit 1
           fi
-          "$aapt_bin" dump badging "$apk" | tee verified-apk/package-metadata.txt | grep -E '^(package:|sdkVersion:|targetSdkVersion:|native-code:)' || true
+          "$aapt_bin" dump badging "$apk" > verified-apk/package-metadata.txt
+          grep -Fq "package: name='org.cromite.cromite' versionCode='801003702' versionName='153.0.8010.37'" verified-apk/package-metadata.txt
+          grep -Fq "sdkVersion:'29'" verified-apk/package-metadata.txt
+          grep -Fq "targetSdkVersion:'36'" verified-apk/package-metadata.txt
+          grep -Fq "native-code: 'arm64-v8a'" verified-apk/package-metadata.txt
+          grep -E '^(package:|sdkVersion:|targetSdkVersion:|native-code:)' verified-apk/package-metadata.txt
           "$apksigner_bin" verify --verbose --print-certs "$apk" 2>&1 | tee verified-apk/signature-metadata.txt
+          grep -Fq 'Verifies' verified-apk/signature-metadata.txt
+          grep -Fq 'V2 Signer: certificate DN: CN=CromiteOrg' verified-apk/signature-metadata.txt
+          grep -Fq 'V2 Signer: certificate SHA-256 digest: 633fa41d8211d6d0916a819b89668c6de92e64232da67f9d16fd81c3b7e923ff' verified-apk/signature-metadata.txt
           {
-            echo '### APK metadata inspection passed'
-            echo 'Package metadata and signature verification output are included in the artifact.'
-            echo 'This does not establish that the APK is an MVM build or that it is safe for all devices.'
+            echo '### APK baseline verification passed'
+            echo '- SHA-256, package ID/version, min/target SDK, ARM64 ABI and signing certificate match the pinned baseline.'
+            echo '- This is upstream Cromite, not an MVM Browser build.'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload verified APK and inspection metadata
         uses: actions/upload-artifact@v4
