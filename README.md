@@ -26,6 +26,7 @@ MVM Browser is not yet running a bundled Chromium engine. Review the research do
 - [Chromium base options](docs/CHROMIUM_BASE_OPTIONS.md) — upstream Chromium, Cromite source forks, and GeckoView, including version, maintenance, and licensing caveats.
 - [Distribution/security checklist](docs/CHROMIUM_DISTRIBUTION_CHECKLIST.md) — notices, source provenance, and update responsibilities.
 - [Read-only build-host checker](scripts/check-chromium-build-host.sh) — checks Linux architecture, effective RAM, and free disk without downloading source.
+- [Chromium source cleanliness checker](scripts/check-chromium-source-clean.sh) — rejects tracked/untracked checkout changes that could make build provenance ambiguous.
 - [Chromium build script](scripts/build-chromium-android.sh) — builds an upstream arm64 proof APK on a suitable Linux host and writes a metadata sidecar plus the exact GN args; it has not yet been run successfully in this environment.
 - [Offline APK verifier](scripts/verify-chromium-apk.sh) — checks APK ZIP integrity, Android manifest presence, APK/GN-args checksums, and source revision metadata without installing the APK.
 - [Android device smoke-test script](scripts/smoke-test-chromium-device.sh) — checks device authorization, Android API level, and ARM64 compatibility; installation requires `--install` plus interactive confirmation.
