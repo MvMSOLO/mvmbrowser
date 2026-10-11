@@ -76,6 +76,8 @@ if [[ -z "$AAPT_BIN" ]]; then
     AAPT_BIN="$(find "$SDK_BUILD_TOOLS" -type f -name aapt -perm -111 -print -quit)"
   fi
 fi
+SDK_BUILD_TOOLS="${CHROMIUM_ROOT:-$HOME/chromium-mvm}/src/third_party/android_sdk/public/build-tools"
+
 if [[ -n "$AAPT_BIN" ]]; then
   [[ -x "$AAPT_BIN" ]] || fail "AAPT is not executable: $AAPT_BIN"
   BADGING="$("$AAPT_BIN" dump badging "$APK")" || fail "aapt could not read the APK binary manifest."
@@ -92,7 +94,27 @@ else
   echo "NOTE: aapt not found; binary Android manifest metadata check was skipped."
 fi
 
-echo "VERIFY PASSED: APK structure, GN args, metadata and ZIP integrity agree."
+APKSIGNER_BIN="${APKSIGNER:-}"
+if [[ -z "$APKSIGNER_BIN" ]] && command -v apksigner >/dev/null 2>&1; then
+  APKSIGNER_BIN="$(command -v apksigner)"
+fi
+if [[ -z "$APKSIGNER_BIN" && -d "$SDK_BUILD_TOOLS" ]]; then
+  APKSIGNER_BIN="$(find "$SDK_BUILD_TOOLS" -type f -name apksigner -perm -111 -print -quit)"
+fi
+if [[ -n "$APKSIGNER_BIN" ]]; then
+  [[ -x "$APKSIGNER_BIN" ]] || fail "apksigner is not executable: $APKSIGNER_BIN"
+  SIGNATURE_REPORT="$("$APKSIGNER_BIN" verify --verbose --print-certs "$APK" 2>&1)" \
+    || { printf '%s\n' "$SIGNATURE_REPORT" >&2; fail "APK signature verification failed."; }
+  CERT_SHA="$(printf '%s\n' "$SIGNATURE_REPORT" | sed -n 's/.*certificate SHA-256 digest: *//p' | head -n 1)"
+  echo "APK signature: verified by apksigner"
+  if [[ -n "$CERT_SHA" ]]; then
+    echo "Signer certificate SHA-256: $CERT_SHA"
+  fi
+else
+  echo "NOTE: apksigner not found; APK signature verification was skipped."
+fi
+
+echo "VERIFY PASSED: APK structure, metadata and checksums passed all available checks."
 echo "APK: $APK"
 echo "Chromium revision: $CHROMIUM_REVISION"
 echo "depot_tools revision: $DEPOT_TOOLS_REVISION"
