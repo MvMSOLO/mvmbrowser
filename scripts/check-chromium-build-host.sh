@@ -6,6 +6,12 @@ set -uo pipefail
 # cloud resources. Use: bash scripts/check-chromium-build-host.sh
 
 ROOT="${CHROMIUM_ROOT:-$HOME/chromium-mvm}"
+MIN_RAM_GIB="${CHROMIUM_MIN_RAM_GIB:-8}"
+MIN_FREE_GIB="${CHROMIUM_MIN_FREE_GB:-100}"
+if ! [[ "$MIN_RAM_GIB" =~ ^[0-9]+$ && "$MIN_FREE_GIB" =~ ^[0-9]+$ ]] || (( MIN_RAM_GIB < 1 || MIN_FREE_GIB < 1 )); then
+  echo "ERROR: minimum RAM and disk thresholds must be positive whole numbers." >&2
+  exit 2
+fi
 if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
   echo "BLOCKED: Chromium Android builds require x86-64 Linux."
   echo "Detected: $(uname -s) / $(uname -m)"
@@ -13,6 +19,7 @@ if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
 fi
 
 echo "Chromium Android build-host report"
+echo "Preflight thresholds: RAM >= ${MIN_RAM_GIB} GiB, free disk >= ${MIN_FREE_GIB} GiB"
 echo "Target checkout path: $ROOT"
 echo "CPU threads visible: $(getconf _NPROCESSORS_ONLN 2>/dev/null || echo unknown)"
 
@@ -58,8 +65,8 @@ if [[ -r /etc/os-release ]]; then
 fi
 
 blocked=0
-if (( MEM_GIB < 8 )); then
-  echo "BLOCKED: official minimum is 8 GiB RAM; 16+ GiB is highly recommended."
+if (( MEM_GIB < MIN_RAM_GIB )); then
+  echo "BLOCKED: effective RAM is below configured minimum of ${MIN_RAM_GIB} GiB."
   blocked=1
 elif (( MEM_GIB < 16 )); then
   echo "WARNING: RAM meets the stated minimum but is below the recommended 16+ GiB."
@@ -67,8 +74,8 @@ else
   echo "RAM: OK"
 fi
 
-if (( FREE_GIB < 100 )); then
-  echo "BLOCKED: need at least 100 GiB free for checkout/build; more headroom is safer."
+if (( FREE_GIB < MIN_FREE_GIB )); then
+  echo "BLOCKED: need at least ${MIN_FREE_GIB} GiB free for checkout/build; more headroom is safer."
   blocked=1
 else
   echo "Disk: OK"
