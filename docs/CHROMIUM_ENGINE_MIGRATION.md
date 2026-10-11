@@ -65,7 +65,9 @@ bash scripts/smoke-test-chromium-device.sh --install --serial DEVICE_SERIAL
 
 The `--install` mode requires an interactive confirmation before it installs the locally built APK and opens `https://example.com`. After it completes, visually confirm that the page rendered; the script cannot certify UI rendering by command success alone.
 
-The expected output is an unbranded Chromium APK named `MVM-Chromium-arm64.apk` under the chosen Chromium workspace. The script requests noninteractive dependency installation, checks that sudo is usable before a large checkout for non-root users, syncs dependencies without running hooks twice, and invokes the source-cleanliness guard before dependency installation and again after sync/hooks. The source guard can also be run by itself to inspect an existing checkout without network access. The script has been committed, but it has **not** been executed in this environment; do not treat the APK as built or tested yet.
+The expected output is an unbranded Chromium APK named `MVM-Chromium-arm64.apk` under the chosen Chromium workspace. The script requests noninteractive dependency installation, checks that sudo is usable before a large checkout for non-root users, syncs dependencies without running hooks twice, and invokes the source-cleanliness guard before dependency installation and again after sync/hooks. The source guard can also be run by itself to inspect an existing checkout without network access.
+
+A manual workflow is also available at [chromium-self-hosted-build.yml](../.github/workflows/chromium-self-hosted-build.yml). It requires a runner labelled self-hosted, linux, x64, chromium-builder with enough RAM/disk, noninteractive dependency-install permissions, and two full 40-character commit SHAs. It only accepts a dispatch from main with confirm_build=yes; it uploads the APK plus provenance files for 14 days. It does not provision infrastructure and does not install the APK on a device. The script has been committed, but it has **not** been executed in this environment; do not treat the APK as built or tested yet.
 
 ## Important status
 
