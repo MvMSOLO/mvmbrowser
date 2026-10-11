@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'README.md'
       - 'scripts/build-chromium-android.sh'
       - 'scripts/read-chromium-version.sh'
       - 'scripts/check-chromium-gclient-config.sh'
@@ -20,6 +21,7 @@ on:
       - '.github/workflows/chromium-self-hosted-build.yml'
   pull_request:
     paths:
+      - 'README.md'
       - 'scripts/build-chromium-android.sh'
       - 'scripts/read-chromium-version.sh'
       - 'scripts/check-chromium-gclient-config.sh'
@@ -172,6 +174,7 @@ jobs:
           grep -Fq 'RELEASE_APK="MVM-Browser.apk"' .github/workflows/android-apk-release.yml
           grep -Fq 'gh release create "$TAG" "$RELEASE_APK"' .github/workflows/android-apk-release.yml
           grep -Fq 'sha256sum "$RELEASE_APK"' .github/workflows/android-apk-release.yml
+          grep -Fq 'releases/latest/download/MVM-Browser.apk' README.md
           ruby -e 'require "yaml"; YAML.load_file(".github/workflows/chromium-self-hosted-build.yml", aliases: true)'
           grep -Fq 'workflow_dispatch:' .github/workflows/chromium-self-hosted-build.yml
           grep -Fq 'default: "no"' .github/workflows/chromium-self-hosted-build.yml
