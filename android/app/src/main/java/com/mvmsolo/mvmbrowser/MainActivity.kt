@@ -556,7 +556,9 @@ class MainActivity : Activity() {
             if (tab.url.startsWith("http://") || tab.url.startsWith("https://")) {
                 val old = prefs.getStringSet("history", emptySet())?.toMutableSet() ?: mutableSetOf()
                 old.add("${System.currentTimeMillis()}|${tab.url}")
-                prefs.edit().putStringSet("history", old.toList().takeLast(200).toSet()).apply()
+                // StringSet iteration order is undefined; sort by timestamp before trimming.
+                val recent = old.sortedBy { it.substringBefore("|").toLongOrNull() ?: 0L }.takeLast(200).toSet()
+                prefs.edit().putStringSet("history", recent).apply()
             }
         }
         CookieManager.getInstance().flush()
