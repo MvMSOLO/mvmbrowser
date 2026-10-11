@@ -21,10 +21,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: web-app-ci
-  cancel-in-progress: true
-
 jobs:
   verify:
     name: Typecheck, tests, lint and production build
