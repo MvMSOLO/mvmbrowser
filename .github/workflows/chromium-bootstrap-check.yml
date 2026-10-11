@@ -50,3 +50,19 @@ jobs:
             exit 1
           fi
           grep -Fq 'RESULT: NOT READY' preflight-blocked.txt
+
+      - name: Verify build script stops before network work on insufficient disk
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/mvm-chromium-test"
+          if CHROMIUM_MIN_FREE_GB=999999 \
+            CHROMIUM_ROOT="$RUNNER_TEMP/mvm-chromium-test" \
+            bash scripts/build-chromium-android.sh > build-blocked.txt 2>&1; then
+            echo "Expected the build script to reject the artificial disk requirement." >&2
+            exit 1
+          fi
+          grep -Fq 'need at least 999999 GiB' build-blocked.txt
+          if grep -Fq 'Fetching Chromium Android source' build-blocked.txt; then
+            echo "Build script started a source fetch despite a failed preflight." >&2
+            exit 1
+          fi
