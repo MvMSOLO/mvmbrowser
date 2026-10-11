@@ -17,9 +17,18 @@ If that link is not available yet, open [Releases](https://github.com/MvMSOLO/mv
 - Download handling is implemented through Android DownloadManager.
 - **Engine status:** the current app still uses Android System WebView. A bundled standalone Chromium engine is a separate ongoing migration and is not yet included in the APK.
 
-## Chromium migration
+## Chromium migration and research
 
-See [Chromium Engine Migration](docs/CHROMIUM_ENGINE_MIGRATION.md) for the verified architecture, build constraints, and next steps.
+MVM Browser is not yet running a bundled Chromium engine. Review the research docs before choosing the next architecture:
+
+- [Engine migration plan](docs/CHROMIUM_ENGINE_MIGRATION.md) — architecture and first proof-build steps.
+- [Engine/resource research](docs/ENGINE_RESOURCE_RESEARCH.md) — host requirements, cloud-account constraints, and public pricing comparisons.
+- [Chromium base options](docs/CHROMIUM_BASE_OPTIONS.md) — upstream Chromium vs. Cromite vs. GeckoView, including version, maintenance, and licensing caveats.
+- [Distribution/security checklist](docs/CHROMIUM_DISTRIBUTION_CHECKLIST.md) — notices, source provenance, and update responsibilities.
+- [Read-only build-host checker](scripts/check-chromium-build-host.sh) — checks Linux architecture, effective RAM, and free disk without downloading source.
+- [Chromium build script](scripts/build-chromium-android.sh) — builds an upstream arm64 proof APK on a suitable Linux host; it has not yet been run successfully in this environment.
+
+The current script-validation workflow checks Bash syntax and preflight behavior only; it does not compile Chromium.
 
 ## Build locally
 
