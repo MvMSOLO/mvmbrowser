@@ -47,7 +47,7 @@ Before any installation attempt, run the offline verifier against the output:
 bash scripts/verify-chromium-apk.sh
 ```
 
-The verifier checks the APK ZIP integrity, the root Android manifest entry, both SHA-256 digests, target ABI/OS, and full Chromium/`depot_tools` commit IDs. It does not download, install, or launch anything. A successful verifier result confirms local artifact integrity and provenance fields, not that Chromium will launch correctly on a device.
+The verifier checks the APK ZIP integrity, root Android manifest entry, both SHA-256 digests, target ABI/OS, and full Chromium/`depot_tools` commit IDs. When Android Build Tools `aapt` is available, it additionally checks the package ID, `minSdkVersion` (API 29+), and `arm64-v8a` native code. When `aapt` is unavailable it clearly notes that binary-manifest checks were skipped. It does not download, install, or launch anything. A successful verifier result confirms local artifact integrity and provenance fields, not that Chromium will launch correctly on a device.
 
 When a real Android 10+ ARM64 device is connected with USB debugging authorized, run the device preflight:
 
