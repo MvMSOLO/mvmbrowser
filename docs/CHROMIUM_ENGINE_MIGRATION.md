@@ -34,7 +34,7 @@ Run it with:
 bash scripts/build-chromium-android.sh
 ```
 
-The expected output is an unbranded Chromium APK named `MVM-Chromium-arm64-debug.apk` under the chosen Chromium workspace. The script has been committed, but it has **not** been executed in this environment; do not treat the APK as built or tested yet.
+The expected output is an unbranded Chromium APK named `MVM-Chromium-arm64.apk` under the chosen Chromium workspace. The script has been committed, but it has **not** been executed in this environment; do not treat the APK as built or tested yet.
 
 ## Important status
 
