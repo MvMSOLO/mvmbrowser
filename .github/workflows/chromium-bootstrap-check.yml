@@ -256,11 +256,33 @@ jobs:
           AAPT
           chmod +x "$fake_aapt"
 
-          AAPT="$fake_aapt" bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-pass.txt
+          fake_apksigner="$test_root/fake-apksigner"
+          cat > "$fake_apksigner" <<'APKSIGNER'
+          #!/usr/bin/env bash
+          [[ "${1:-}" == "verify" && "${2:-}" == "--verbose" && "${3:-}" == "--print-certs" ]] || exit 2
+          if [[ "${FAKE_APKSIGNER_FAIL:-0}" == "1" ]]; then
+            echo "DOES NOT VERIFY" >&2
+            exit 1
+          fi
+          echo "Verifies"
+          echo "Signer #1 certificate SHA-256 digest: 0123456789abcdef"
+          APKSIGNER
+          chmod +x "$fake_apksigner"
+
+          AAPT="$fake_aapt" APKSIGNER="$fake_apksigner" bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-pass.txt
           grep -Fq 'VERIFY PASSED' verifier-pass.txt
           grep -Fq 'Package ID: org.chromium.chrome' verifier-pass.txt
           grep -Fq 'Minimum Android API: 29' verifier-pass.txt
           grep -Fq 'Native ABI: arm64-v8a' verifier-pass.txt
+          grep -Fq 'APK signature: verified by apksigner' verifier-pass.txt
+          grep -Fq 'Signer certificate SHA-256: 0123456789abcdef' verifier-pass.txt
+
+          if AAPT="$fake_aapt" APKSIGNER="$fake_apksigner" FAKE_APKSIGNER_FAIL=1 \
+            bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-signature-fail.txt 2>&1; then
+            echo "Expected the APK verifier to reject failed signature verification." >&2
+            exit 1
+          fi
+          grep -Fq 'APK signature verification failed' verifier-signature-fail.txt
 
           if AAPT="$fake_aapt" FAKE_MIN_SDK=28 bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-api-fail.txt 2>&1; then
             echo "Expected the APK verifier to reject minSdkVersion below API 29." >&2
