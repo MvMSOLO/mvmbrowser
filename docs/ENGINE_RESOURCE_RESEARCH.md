@@ -89,6 +89,8 @@ Important: cloud build machines are paid resources. No instance has been launche
 - The current MVM Browser Android APK and Release APK CI workflows passed for commit fe9b9b3.
 - The current application still uses Android System WebView.
 - The Chromium build script is present but has not been executed here. It now checks minimum RAM/disk before checkout and uses fetch --nohooks so dependencies are installed before Chromium hooks run.
+- A read-only host diagnostic is available at scripts/check-chromium-build-host.sh; it does not download or install anything.
+- Before any public distribution, review docs/CHROMIUM_DISTRIBUTION_CHECKLIST.md for branding, notices, security updates, and build provenance.
 - No Chromium APK, benchmark, device test, or cloud-host availability is claimed by this research note.
 
 ## Follow-up checklist
@@ -96,6 +98,7 @@ Important: cloud build machines are paid resources. No instance has been launche
 - [ ] Select a host: DigitalOcean CPU-Optimized 16-vCPU/32-GiB/200-GiB is the current cost-focused candidate; GitHub larger runners are an alternative if the account supports them.
 - [ ] Confirm the exact region, hourly rate, disk capacity, budget limit, and cleanup plan before creating any paid resource.
 - [ ] Confirm an eligible Linux build host and exact free disk/RAM.
+- [ ] Run bash scripts/check-chromium-build-host.sh on the candidate Linux host before any source download.
 - [ ] Review the current build script against upstream instructions immediately before running it.
 - [ ] Complete the first upstream Chromium build.
 - [ ] Install and smoke-test the APK.
