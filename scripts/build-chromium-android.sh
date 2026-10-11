@@ -191,6 +191,27 @@ if [[ -n "$CHROMIUM_REVISION" ]]; then
   git checkout --detach "$PINNED_REVISION"
 fi
 
+VERSION_FILE="$SRC_DIR/chrome/VERSION"
+if [[ ! -r "$VERSION_FILE" ]]; then
+  echo "ERROR: Chromium version file is missing: $VERSION_FILE" >&2
+  exit 2
+fi
+version_field() {
+  awk -F'= *' -v field="$1" '$1 == field {gsub(/[[:space:]]/, "", $2); print $2; exit}' "$VERSION_FILE"
+}
+CHROMIUM_MAJOR="$(version_field MAJOR)"
+CHROMIUM_MINOR="$(version_field MINOR)"
+CHROMIUM_BUILD="$(version_field BUILD)"
+CHROMIUM_PATCH="$(version_field PATCH)"
+for version_part in "$CHROMIUM_MAJOR" "$CHROMIUM_MINOR" "$CHROMIUM_BUILD" "$CHROMIUM_PATCH"; do
+  if ! [[ "$version_part" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: Chromium chrome/VERSION has a missing or invalid version component." >&2
+    exit 2
+  fi
+done
+CHROMIUM_VERSION="$CHROMIUM_MAJOR.$CHROMIUM_MINOR.$CHROMIUM_BUILD.$CHROMIUM_PATCH"
+echo "Pinned Chromium version: $CHROMIUM_VERSION"
+
 # Never label a build with only HEAD if local tracked or untracked changes
 # will silently affect the output. Commit intended patches before building.
 bash "$SCRIPT_DIR/check-chromium-source-clean.sh" "$SRC_DIR"
@@ -253,6 +274,7 @@ build_date_utc=$BUILD_DATE_UTC
 host_os=$HOST_OS
 host_arch=$HOST_ARCH
 chromium_revision=$BUILD_REVISION
+chromium_version=$CHROMIUM_VERSION
 chromium_source_tree_clean=true
 depot_tools_revision=$DEPOT_TOOLS_REVISION_ACTUAL
 depot_tools_auto_update=$DEPOT_TOOLS_UPDATE
@@ -269,6 +291,7 @@ echo "APK: $DEST"
 echo "Metadata: $METADATA"
 echo "GN args: $ARGS_COPY"
 echo "Chromium revision: $BUILD_REVISION"
+echo "Chromium version: $CHROMIUM_VERSION"
 echo "depot_tools revision: $DEPOT_TOOLS_REVISION_ACTUAL"
 echo "GN args SHA-256: $GN_ARGS_SHA256"
 echo "APK SHA-256: $APK_SHA256"
