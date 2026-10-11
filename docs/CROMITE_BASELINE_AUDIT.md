@@ -14,6 +14,14 @@
 - Official Chrome release information reported Chrome Stable 155.0.8059.39 on 2026-10-06: https://releases.sh/google/chrome-releases
 - Therefore the available Cromite release is two major versions behind that stable baseline. This comparison is a warning gate, not a complete CVE audit.
 
+## Build-image availability status (checked 2026-10-11)
+
+GitHub Actions run [#38139634564](https://github.com/MvMSOLO/mvmbrowser/actions/runs/38139634564) executed `docker manifest inspect` for `uazo/cromite-build:153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a`. The registry manifest could not be verified; the workflow emitted a warning and did not pull the image or compile anything. Treat the result as **unverified/blocked**, not as conclusive evidence that the tag is absent.
+
+The public [Cromite build-image tag page](https://hub.docker.com/r/uazo/cromite-build) surfaces an older recent image tag, while the latest GitHub release and `build/RELEASE` still report 153.0.8010.37. A distinct [uazo/chromium](https://hub.docker.com/r/uazo/chromium/tags) tag for Chromium 154 does not establish a matching Cromite build image and must not replace it without rebasing/applying and verifying the exact Cromite patches and toolchain. The safe next gate is to verify the exact release-specific image or build it using Cromite's upstream image-preparation workflow on a suitable already-available host.
+
+The green upstream-watch workflow means its metadata queries and reporting succeeded; the image-status warning is still a real blocker. No Chromium source build or MVM-branded APK has been produced by this project yet.
+
 ## What this means
 
 1. The APK is useful as a ready browser to inspect UI/behavior on a test device, but it must not be called an integrated MVM engine.
@@ -44,6 +52,7 @@ The script checks the SHA-256 published by GitHub. A checksum match proves the b
 
 - [ ] Recheck current Chrome Stable and latest Cromite release.
 - [ ] Identify a Cromite release whose Chromium base is current enough for the intended test/release.
+- [ ] Confirm the release-specific build-image manifest is actually available; if not, follow upstream image preparation on an available host rather than substituting vanilla Chromium.
 - [ ] Read its release-specific build image and patch workflow.
 - [ ] Build only on an already-available suitable Linux x86-64 runner; do not create paid infrastructure automatically.
 - [ ] Keep MVM branding changes separate from upstream patch/build changes.

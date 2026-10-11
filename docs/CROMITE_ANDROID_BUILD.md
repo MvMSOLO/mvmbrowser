@@ -17,6 +17,14 @@ Before GN generation, the build script verifies that the pinned source contains 
 
 The output is named `MVM-Cromite-153.0.8010.37-arm64-MVM-package.apk`. Metadata explicitly records `branding_status=package-id-only-upstream-ui`. Verify signing and licensing before any install or redistribution.
 
+## Observed build-image blocker — 2026-10-11
+
+The upstream-watch job for this branch attempted `docker manifest inspect` on the exact pinned image `uazo/cromite-build:153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a` and could not verify its manifest. The job emitted a warning and deliberately did not pull an image or start compilation. See [the run log](https://github.com/MvMSOLO/mvmbrowser/actions/runs/38139634564). This result is **UNKNOWN/BLOCKED**, not proof the tag definitively does not exist: registry, manifest, or access failures can look the same here.
+
+The public [Cromite build-image page](https://hub.docker.com/r/uazo/cromite-build) currently surfaces an older recent tag, while the current Cromite release page is on 153. The separate [uazo/chromium image](https://hub.docker.com/r/uazo/chromium/tags) lists Chromium 154, but that vanilla/source image is **not a safe substitute** for the release-matched Cromite build image: it does not prove the right Cromite patch stack has been applied. Keep the version/commit pair pinned. The build script fails closed before `docker pull` if the exact manifest cannot be inspected.
+
+Before running `--execute`, recheck the exact pinned manifest and arrange an eligible Linux x86-64 Docker host with enough free disk/RAM. If the exact image remains unavailable, follow the upstream [build workflow](https://github.com/uazo/cromite/blob/master/.github/workflows/build_cromite.yaml) and its image-preparation path on an already available suitable host; do not silently substitute vanilla Chromium or create paid infrastructure. No Chromium source compilation or MVM APK has been completed yet.
+
 ## Safe execution
 
 The script defaults to a dry run. It does not pull an image or compile unless the user explicitly supplies `--execute`.
@@ -32,6 +40,7 @@ Output is written under `artifacts/cromite/` by default, or to `OUTPUT_DIR` if s
 
 ## Important release gates
 
+- The exact 153 Cromite build-image manifest was not verified by the 2026-10-11 upstream-watch run. This is a build blocker until a fresh manifest check succeeds; the green watch workflow means the metadata report worked, not that the image or APK build succeeded.
 - This pinned upstream Chromium base is 153.0.8010.37 and is behind the Chrome Stable baseline recorded in `CROMITE_BASELINE_AUDIT.md`. This is a reproducibility/prototype build, not an approval for sensitive browsing or public release.
 - The upstream APK hash only identifies the upstream release artifact. A locally built APK must have its own checksum; it will not be expected to match the upstream APK byte-for-byte.
 - Inspect signing with Android `apksigner` before installing. The script does not assume the upstream release signing key is available.
