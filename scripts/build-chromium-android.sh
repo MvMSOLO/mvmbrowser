@@ -182,6 +182,15 @@ if [[ -n "$CHROMIUM_REVISION" ]]; then
   git checkout --detach "$PINNED_REVISION"
 fi
 
+# Never label a build with only HEAD if local tracked or untracked changes
+# will silently affect the output. Commit intended patches before building.
+if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
+  echo "ERROR: Chromium source checkout is dirty; refusing a provenance-ambiguous build." >&2
+  git status --short >&2
+  echo "Commit, stash, or remove local source changes, then retry." >&2
+  exit 2
+fi
+
 echo "==> Installing official Chromium Linux/Android build dependencies"
 if (( EUID == 0 )); then
   build/install-build-deps.sh --no-prompt
@@ -193,6 +202,13 @@ echo "==> Syncing Chromium dependencies without running hooks twice"
 gclient sync --nohooks
 echo "==> Running Chromium hooks once"
 gclient runhooks
+
+if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
+  echo "ERROR: Chromium source checkout became dirty after dependency sync/hooks." >&2
+  git status --short >&2
+  echo "Review generated or modified source files before continuing." >&2
+  exit 2
+fi
 
 echo "==> Generating arm64 Android browser build"
 mkdir -p "$OUT_DIR"
@@ -238,6 +254,7 @@ build_date_utc=$BUILD_DATE_UTC
 host_os=$HOST_OS
 host_arch=$HOST_ARCH
 chromium_revision=$BUILD_REVISION
+chromium_source_tree_clean=true
 depot_tools_revision=$DEPOT_TOOLS_REVISION_ACTUAL
 depot_tools_auto_update=$DEPOT_TOOLS_UPDATE
 target_os=android
