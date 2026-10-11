@@ -49,26 +49,28 @@ def element_local_text(parent: ET.Element, name: str) -> str:
     return " ".join(part.strip() for part in element.itertext() if part.strip()).strip()
 
 
-def latest_android_stable_release() -> dict[str, str] | None:
+def android_release_posts() -> list[dict[str, str]]:
     root = ET.fromstring(fetch_bytes(CHROME_RSS))
     root_name = root.tag.rsplit("}", 1)[-1].casefold()
-    entries: list[tuple[str, ET.Element, str]] = []
+    entries: list[tuple[str, ET.Element]] = []
 
     if root_name == "feed":
         # Blogger may serve Atom XML even when the URL requests alt=rss.
-        for entry in list(root):
-            if entry.tag.rsplit("}", 1)[-1] == "entry":
-                entries.append(("atom", entry, ""))
+        entries.extend(
+            ("atom", item)
+            for item in list(root)
+            if item.tag.rsplit("}", 1)[-1] == "entry"
+        )
     elif root_name == "rss":
         channel = root.find("./channel")
         if channel is None:
             raise ValueError("Chrome Releases RSS did not contain a channel element.")
-        for item in channel.findall("item"):
-            entries.append(("rss", item, ""))
+        entries.extend(("rss", item) for item in channel.findall("item"))
     else:
         raise ValueError(f"Unexpected Chrome Releases feed root: {root.tag!r}")
 
-    for feed_type, item, _unused in entries:
+    releases: list[dict[str, str]] = []
+    for feed_type, item in entries:
         title = element_local_text(item, "title")
         # Exact matching deliberately excludes Beta and Dev posts.
         if title.casefold() != "chrome for android update":
@@ -82,22 +84,29 @@ def latest_android_stable_release() -> dict[str, str] | None:
         description = html.unescape(description)
         description = re.sub(r"<[^>]+>", " ", description)
         description = re.sub(r"\s+", " ", description).strip()
+
         match = re.search(
             r"\bChrome\s+(\d+)\s*\(([\d.]+)\)\s+for Android",
             description,
             flags=re.IGNORECASE,
         )
-        if not match:
-            # Keep source metadata even if Google changes the release-note wording.
-            version = "version not parsed"
-            major = ""
-        else:
+        if match:
             major, version = match.group(1), match.group(2)
+        else:
+            # Retain source metadata if Google changes the release-note wording.
+            major, version = "", "version not parsed"
 
-        date = element_local_text(item, "pubDate") or element_local_text(item, "published")
-        if not date:
-            date = element_local_text(item, "updated")
+        # Google titles can be identical for regular and Early Stable posts.
+        is_early_stable = bool(
+            re.search(r"\bearly stable\b|small percentage of users", description, re.IGNORECASE)
+        )
+        channel_name = "early stable" if is_early_stable else "stable"
 
+        date = (
+            element_local_text(item, "pubDate")
+            or element_local_text(item, "published")
+            or element_local_text(item, "updated")
+        )
         url = element_local_text(item, "link")
         if feed_type == "atom":
             link_element = next(
@@ -113,15 +122,30 @@ def latest_android_stable_release() -> dict[str, str] | None:
             if link_element is not None:
                 url = link_element.attrib["href"]
 
-        return {
+        releases.append({
             "title": title,
             "version": version,
             "major": major,
             "date": date,
             "url": url,
             "description": description[:500],
-        }
-    return None
+            "channel": channel_name,
+        })
+    return releases
+
+
+def latest_android_stable_release() -> dict[str, str] | None:
+    return next(
+        (release for release in android_release_posts() if release["channel"] == "stable"),
+        None,
+    )
+
+
+def latest_android_early_stable_release() -> dict[str, str] | None:
+    return next(
+        (release for release in android_release_posts() if release["channel"] == "early stable"),
+        None,
+    )
 
 def github_json(url: str) -> Any:
     raw = fetch_bytes(
@@ -196,6 +220,7 @@ def render_report() -> str:
         "",
     ]
     chrome: dict[str, str] | None = None
+    early_chrome: dict[str, str] | None = None
     uazo: dict[str, str] | None = None
     qwez_releases: list[dict[str, str]] | None = None
     qwez_commit: dict[str, str] | None = None
@@ -216,6 +241,23 @@ def render_report() -> str:
     except Exception as error:  # report external outages rather than hiding them
         errors.append(f"Chrome Releases feed: {type(error).__name__}: {error}")
         lines.append("- **Unavailable:** could not read the official Chrome Releases feed.")
+
+    lines += ["", "## Chrome for Android Early Stable (limited rollout)", ""]
+    try:
+        early_chrome = latest_android_early_stable_release()
+        if early_chrome is None:
+            lines.append("- No separate Early Stable Android post was found in the feed.")
+        else:
+            lines += [
+                f"- **Preview version:** {early_chrome['version']}",
+                f"- **Published:** {early_chrome['date'] or 'date not supplied'}",
+                f"- **Source:** {early_chrome['url'] or CHROME_RSS}",
+                "",
+                f"Release note excerpt: {early_chrome['description'] or 'No description supplied.'}",
+            ]
+    except Exception as error:
+        errors.append(f"Chrome Early Stable feed: {type(error).__name__}: {error}")
+        lines.append("- **Unavailable:** could not identify an Early Stable Android post.")
 
     lines += ["", "## Cromite release signals", ""]
     try:
