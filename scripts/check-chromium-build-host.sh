@@ -5,7 +5,7 @@ set -uo pipefail
 # This script does not download code, install packages, require sudo, or create
 # cloud resources. Use: bash scripts/check-chromium-build-host.sh
 
-ROOT="\${CHROMIUM_ROOT:-$HOME/chromium-mvm}"
+ROOT="${CHROMIUM_ROOT:-$HOME/chromium-mvm}"
 if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
   echo "BLOCKED: Chromium Android builds require x86-64 Linux."
   echo "Detected: $(uname -s) / $(uname -m)"
@@ -19,7 +19,7 @@ echo "CPU threads visible: $(getconf _NPROCESSORS_ONLN 2>/dev/null || echo unkno
 if [[ -r /proc/meminfo ]]; then
   MEM_KB="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
   MEM_GIB="$((MEM_KB / 1024 / 1024))"
-  echo "Detected RAM: \${MEM_GIB} GiB"
+  echo "Detected RAM: ${MEM_GIB} GiB"
 else
   MEM_GIB=0
   echo "Detected RAM: unknown (/proc/meminfo unavailable)"
@@ -32,11 +32,11 @@ done
 FREE_KB="$(df -Pk "$DISK_BASE" | awk 'NR==2 {print $4}')"
 FREE_GIB="$((FREE_KB / 1024 / 1024))"
 echo "Disk path checked: $DISK_BASE"
-echo "Free disk: \${FREE_GIB} GiB"
+echo "Free disk: ${FREE_GIB} GiB"
 
 if [[ -r /etc/os-release ]]; then
   . /etc/os-release
-  echo "Linux distribution: \${PRETTY_NAME:-unknown}"
+  echo "Linux distribution: ${PRETTY_NAME:-unknown}"
 fi
 
 blocked=0
@@ -57,7 +57,7 @@ else
 fi
 
 if [[ -r /etc/os-release ]]; then
-  case "\${ID:-unknown}" in
+  case "${ID:-unknown}" in
     ubuntu|debian) echo "Distribution family: supported starting point" ;;
     *) echo "WARNING: Ubuntu is the primary Chromium build environment; this distribution may need extra work." ;;
   esac
