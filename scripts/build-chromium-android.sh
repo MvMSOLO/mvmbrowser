@@ -80,12 +80,24 @@ else
   echo "WARNING: could not determine RAM limit; continuing without a memory preflight." >&2
 fi
 
-if (( EUID != 0 )) && ! command -v sudo >/dev/null 2>&1; then
-  echo "ERROR: sudo is required to install Chromium build dependencies." >&2
-  exit 2
+if (( EUID != 0 )); then
+  if ! command -v sudo >/dev/null 2>&1; then
+    echo "ERROR: sudo is required to install Chromium build dependencies." >&2
+    exit 2
+  fi
+  if ! sudo -n true >/dev/null 2>&1; then
+    echo "ERROR: sudo is not available non-interactively. Configure the intended build host before starting a large checkout." >&2
+    echo "For a personal interactive session, confirm sudo access first, then rerun this script." >&2
+    exit 2
+  fi
 fi
 
 if [[ ! -d "$DEPOT_TOOLS/.git" ]]; then
+  if [[ -e "$DEPOT_TOOLS" ]]; then
+    echo "ERROR: $DEPOT_TOOLS exists but is not a depot_tools Git checkout." >&2
+    echo "Move it aside or set DEPOT_TOOLS to a clean path before continuing." >&2
+    exit 2
+  fi
   echo "==> Downloading Chromium depot_tools"
   git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git "$DEPOT_TOOLS"
 fi
