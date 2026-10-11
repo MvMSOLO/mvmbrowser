@@ -99,13 +99,15 @@ The public price table above is only a market comparison, not a guarantee that t
 
 - The current MVM Browser Android APK and Release APK CI workflows passed for commit fe9b9b3.
 - The current application still uses Android System WebView.
-- A lightweight CI workflow now checks Bash syntax and guardrails only; it deliberately does not attempt an expensive Chromium build.
-- The Chromium build script is present but has not been executed here. It now checks minimum RAM/disk before checkout, supports an optional pinned revision, records the APK SHA-256, and uses fetch --nohooks so dependencies are installed before Chromium hooks run.
+- The Chromium bootstrap CI now checks Bash syntax, Python syntax/unit tests for the release reporter, host-preflight pass/fail paths, and that the build script refuses to fetch source when the disk check fails. It deliberately does not attempt an expensive Chromium build.
+- The weekly upstream-watch workflow has successfully fetched live public metadata. In its 2026-10-11 snapshot, Chrome 155 was the regular stable Android release, Chrome 156 was Early Stable/limited rollout, and the latest observed uazo/cromite release was based on Chromium 153. The report is a version signal, not a security audit: https://github.com/MvMSOLO/mvmbrowser/actions/runs/38119448150.
+- A scheduled read-only release report runs each Monday at 08:30 UTC and when its own report script/workflow changes: .github/workflows/chromium-upstream-watch.yml. Reports are uploaded as a 30-day artifact; the workflow does not download APKs or create cloud resources.
+- The Chromium build script is present but has not been executed here. It checks minimum RAM/disk before checkout, verifies non-interactive sudo before source download, installs build dependencies without interactive prompts, runs hooks once after sync, supports an optional pinned Chromium revision, and reports Chromium/depot_tools revisions plus the APK SHA-256.
 - The read-only preflight supports configurable thresholds for CI path tests; its default requirements remain 8 GiB RAM and 100 GiB free disk.
-- A separate base-option note compares upstream Chromium, Cromite and GeckoView: docs/CHROMIUM_BASE_OPTIONS.md.
+- The base-option note compares upstream Chromium, both Cromite source repositories, and GeckoView: docs/CHROMIUM_BASE_OPTIONS.md.
 - A read-only host diagnostic is available at scripts/check-chromium-build-host.sh; it does not download or install anything.
 - Before any public distribution, review docs/CHROMIUM_DISTRIBUTION_CHECKLIST.md for branding, notices, security updates, and build provenance.
-- No Chromium APK, benchmark, device test, or cloud-host availability is claimed by this research note.
+- No Chromium APK has been built or device-tested in this environment, and no cloud host has been provisioned. The upstream watcher reads release metadata only.
 
 ## Follow-up checklist
 
@@ -118,4 +120,5 @@ The public price table above is only a market comparison, not a guarantee that t
 - [ ] Complete the first upstream Chromium build.
 - [ ] Install and smoke-test the APK.
 - [ ] Record upstream revision and checksum.
+- [ ] Review the [latest upstream-watch report](https://github.com/MvMSOLO/mvmbrowser/actions/workflows/chromium-upstream-watch.yml) regularly and verify the source version/security fixes, not only major-version numbers.
 - [ ] Estimate ongoing build/storage cost only after selecting a specific host and region.
