@@ -23,6 +23,7 @@ ALLOW_LOW_MEMORY="${ALLOW_LOW_MEMORY:-0}"
 ALLOW_UNKNOWN_MEMORY="${ALLOW_UNKNOWN_MEMORY:-0}"
 SRC_DIR="$CHROMIUM_ROOT/src"
 OUT_DIR="out/MVM"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 # Chromium's own checkout instructions require paths without whitespace.
 if [[ "$CHROMIUM_ROOT" =~ [[:space:]] || "$DEPOT_TOOLS" =~ [[:space:]] ]]; then
@@ -184,12 +185,7 @@ fi
 
 # Never label a build with only HEAD if local tracked or untracked changes
 # will silently affect the output. Commit intended patches before building.
-if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
-  echo "ERROR: Chromium source checkout is dirty; refusing a provenance-ambiguous build." >&2
-  git status --short >&2
-  echo "Commit, stash, or remove local source changes, then retry." >&2
-  exit 2
-fi
+bash "$SCRIPT_DIR/check-chromium-source-clean.sh" "$SRC_DIR"
 
 echo "==> Installing official Chromium Linux/Android build dependencies"
 if (( EUID == 0 )); then
@@ -203,12 +199,7 @@ gclient sync --nohooks
 echo "==> Running Chromium hooks once"
 gclient runhooks
 
-if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
-  echo "ERROR: Chromium source checkout became dirty after dependency sync/hooks." >&2
-  git status --short >&2
-  echo "Review generated or modified source files before continuing." >&2
-  exit 2
-fi
+bash "$SCRIPT_DIR/check-chromium-source-clean.sh" "$SRC_DIR"
 
 echo "==> Generating arm64 Android browser build"
 mkdir -p "$OUT_DIR"
