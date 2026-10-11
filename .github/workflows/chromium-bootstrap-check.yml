@@ -14,6 +14,7 @@ on:
       - '.github/workflows/chromium-build-script-check.yml'
       - '.github/workflows/chromium-upstream-watch.yml'
       - '.github/workflows/chromium-bootstrap-check.yml'
+      - '.github/workflows/chromium-self-hosted-build.yml'
   pull_request:
     paths:
       - 'scripts/build-chromium-android.sh'
@@ -26,6 +27,7 @@ on:
       - '.github/workflows/chromium-build-script-check.yml'
       - '.github/workflows/chromium-upstream-watch.yml'
       - '.github/workflows/chromium-bootstrap-check.yml'
+      - '.github/workflows/chromium-self-hosted-build.yml'
 
 permissions:
   contents: read
@@ -81,6 +83,18 @@ jobs:
           grep -Fq 'sudo -n true' scripts/build-chromium-android.sh
           grep -Fq 'exists but is not a depot_tools' scripts/build-chromium-android.sh
           grep -Fq 'gclient sync --nohooks' scripts/build-chromium-android.sh
+          ruby -e 'require "yaml"; YAML.load_file(".github/workflows/chromium-self-hosted-build.yml", aliases: true)'
+          grep -Fq 'workflow_dispatch:' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'default: "no"' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'runs-on: [self-hosted, linux, x64, chromium-builder]' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'GITHUB_REF" == "refs/heads/main"' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq "github.ref == 'refs/heads/main'" .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'must be a full 40-character Git commit SHA' .github/workflows/chromium-self-hosted-build.yml
+          grep -Fq 'compression-level: 0' .github/workflows/chromium-self-hosted-build.yml
+          if grep -Eq '^  (push|pull_request|schedule):' .github/workflows/chromium-self-hosted-build.yml; then
+            echo "The expensive Chromium build workflow must be manual-dispatch only." >&2
+            exit 1
+          fi
       - name: Test preflight pass and fail paths
         shell: bash
         run: |
