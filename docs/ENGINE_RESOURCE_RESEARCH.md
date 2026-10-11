@@ -104,10 +104,11 @@ The public price table above is only a market comparison, not a guarantee that t
 - A scheduled read-only release report runs each Monday at 08:30 UTC and when its own report script/workflow changes: .github/workflows/chromium-upstream-watch.yml. Reports are uploaded as a 30-day artifact; the workflow does not download APKs or create cloud resources.
 - The Chromium build script is present but has not been executed here. It checks minimum RAM/disk before checkout, verifies non-interactive sudo before source download, installs build dependencies without interactive prompts, runs hooks once after sync, supports an optional pinned Chromium revision, and reports Chromium/depot_tools revisions plus the APK SHA-256.
 - The read-only preflight supports configurable thresholds for CI path tests; its default requirements remain 8 GiB RAM and 100 GiB free disk.
+- The upstream watch has been run successfully using the strict completeness check. Its report artifact is saved for 30 days and identifies Chrome regular stable separately from Early Stable, avoiding a false comparison against limited-rollout versions.
 - The base-option note compares upstream Chromium, both Cromite source repositories, and GeckoView: docs/CHROMIUM_BASE_OPTIONS.md.
 - A read-only host diagnostic is available at scripts/check-chromium-build-host.sh; it does not download or install anything.
 - Before any public distribution, review docs/CHROMIUM_DISTRIBUTION_CHECKLIST.md for branding, notices, security updates, and build provenance.
-- No Chromium APK has been built or device-tested in this environment, and no cloud host has been provisioned. The upstream watcher reads release metadata only.
+- No Chromium APK has been built or device-tested in this environment, and no cloud host has been provisioned. The CI APK verifier uses synthetic fixture data; it is not evidence of a working Chromium APK.
 
 ## Follow-up checklist
 
