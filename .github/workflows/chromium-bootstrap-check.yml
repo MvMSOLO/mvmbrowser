@@ -18,7 +18,9 @@ on:
     paths:
       - 'scripts/build-chromium-android.sh'
       - 'scripts/check-chromium-build-host.sh'
+      - 'scripts/check-chromium-source-clean.sh'
       - 'scripts/verify-chromium-apk.sh'
+      - 'scripts/smoke-test-chromium-device.sh'
       - 'scripts/report-chromium-upstream-status.py'
       - 'tests/test_chromium_upstream_status.py'
       - '.github/workflows/chromium-build-script-check.yml'
