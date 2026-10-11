@@ -244,29 +244,37 @@ class MainActivity : Activity() {
                 } else {
                     view.removeJavascriptInterface("BrowserBridge")
                 }
-                progress.visibility = View.VISIBLE
-                progress.progress = 4
-                address.setText(if (isBundledHomeUrl(url)) "" else url)
                 tabFor(view)?.url = url
+                if (isActiveWeb(view)) {
+                    progress.visibility = View.VISIBLE
+                    progress.progress = 4
+                    address.setText(if (isBundledHomeUrl(url)) "" else url)
+                }
             }
             override fun onPageFinished(view: WebView, url: String) {
-                progress.visibility = View.GONE
-                address.setText(if (isBundledHomeUrl(url)) "" else url)
                 tabFor(view)?.apply { this.url = url; title = view.title ?: url }
+                if (isActiveWeb(view)) {
+                    progress.visibility = View.GONE
+                    address.setText(if (isBundledHomeUrl(url)) "" else url)
+                }
                 updateTabButton()
             }
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-                if (request.isForMainFrame) toast("Page unavailable. Check connection or open a saved page.")
+                if (request.isForMainFrame && isActiveWeb(view)) {
+                    toast("Page unavailable. Check connection or open a saved page.")
+                }
             }
             override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
                 handler.cancel()
-                toast("Secure connection rejected")
+                if (isActiveWeb(view)) toast("Secure connection rejected")
             }
         }
         web.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView, newProgress: Int) {
-                progress.progress = newProgress
-                progress.visibility = if (newProgress in 1..99) View.VISIBLE else View.GONE
+                if (isActiveWeb(view)) {
+                    progress.progress = newProgress
+                    progress.visibility = if (newProgress in 1..99) View.VISIBLE else View.GONE
+                }
             }
             override fun onReceivedTitle(view: WebView, title: String?) {
                 tabFor(view)?.title = title?.take(80) ?: "New tab"
@@ -319,6 +327,8 @@ class MainActivity : Activity() {
 
     private fun tabFor(web: WebView): BrowserTab? = tabs.firstOrNull { it.web === web }
 
+    private fun isActiveWeb(web: WebView): Boolean = active()?.web === web
+
     private fun activate(index: Int) {
         if (tabs.isEmpty()) return
         activeIndex = index.coerceIn(0, tabs.lastIndex)
@@ -326,6 +336,7 @@ class MainActivity : Activity() {
         val web = tabs[activeIndex].web
         (web.parent as? ViewGroup)?.removeView(web)
         webHost.addView(web, FrameLayout.LayoutParams(-1, -1))
+        progress.visibility = View.GONE
         address.setText(if (isBundledHomeUrl(tabs[activeIndex].url)) "" else tabs[activeIndex].url)
         updateTabButton()
     }
