@@ -240,7 +240,7 @@ class MainActivity : Activity() {
             }
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 if (isBundledHomeUrl(url)) {
-                    view.addJavascriptInterface(BrowserBridge(), "BrowserBridge")
+                    view.addJavascriptInterface(BrowserBridge(view), "BrowserBridge")
                 } else {
                     view.removeJavascriptInterface("BrowserBridge")
                 }
@@ -380,16 +380,27 @@ class MainActivity : Activity() {
         return url.substringBefore('#').substringBefore('?') == HOME_ASSET_URL
     }
 
-    private fun home() { active()?.web?.loadUrl(HOME_ASSET_URL) }
-    private fun goBack() { active()?.let { if (it.web.canGoBack()) it.web.goBack() else home() } }
-    private fun goForward() { active()?.let { if (it.web.canGoForward()) it.web.goForward() else toast("No forward page") } }
+    private fun home(targetWeb: WebView? = active()?.web) {
+        targetWeb?.loadUrl(HOME_ASSET_URL)
+    }
+
+    private fun goBack(targetWeb: WebView? = active()?.web) {
+        val web = targetWeb ?: return
+        if (web.canGoBack()) web.goBack() else home(web)
+    }
+
+    private fun goForward(targetWeb: WebView? = active()?.web) {
+        val web = targetWeb ?: return
+        if (web.canGoForward()) web.goForward() else toast("No forward page")
+    }
     override fun onBackPressed() {
         val web = active()?.web
         if (web != null && web.canGoBack()) web.goBack() else if (tabs.size > 1) closeActiveTab() else super.onBackPressed()
     }
 
-    private fun toggleBookmark() {
-        val url = active()?.url ?: return
+    private fun toggleBookmark(targetWeb: WebView? = active()?.web) {
+        val tab = targetWeb?.let { tabFor(it) } ?: return
+        val url = tab.url
         if (isBundledHomeUrl(url)) { toast("Open a website first"); return }
         val key = "bookmarks"
         val items = prefs.getStringSet(key, emptySet())?.toMutableSet() ?: mutableSetOf()
@@ -397,8 +408,8 @@ class MainActivity : Activity() {
         prefs.edit().putStringSet(key, items).apply()
     }
 
-    private fun saveOffline() {
-        val tab = active() ?: return
+    private fun saveOffline(targetWeb: WebView? = active()?.web) {
+        val tab = targetWeb?.let { tabFor(it) } ?: return
         if (!tab.url.startsWith("http://") && !tab.url.startsWith("https://")) {
             toast("Open a web page first"); return
         }
@@ -498,18 +509,20 @@ class MainActivity : Activity() {
 
     private fun updateTabButton() { if (::tabsButton.isInitialized) tabsButton.text = "TABS ${tabs.size}" }
 
-    inner class BrowserBridge {
-        @android.webkit.JavascriptInterface fun back() { runOnUiThread { goBack() } }
-        @android.webkit.JavascriptInterface fun forward() { runOnUiThread { goForward() } }
-        @android.webkit.JavascriptInterface fun home() { runOnUiThread { this@MainActivity.home() } }
-        @android.webkit.JavascriptInterface fun bookmark() { runOnUiThread { toggleBookmark() } }
-        @android.webkit.JavascriptInterface fun saveOffline() { runOnUiThread { this@MainActivity.saveOffline() } }
+    inner class BrowserBridge(private val sourceWeb: WebView) {
+        // Bridge actions are always scoped to the WebView that owns this bridge,
+        // never to whichever tab happens to be active when an async callback fires.
+        @android.webkit.JavascriptInterface fun back() { runOnUiThread { if (tabFor(sourceWeb) != null) goBack(sourceWeb) } }
+        @android.webkit.JavascriptInterface fun forward() { runOnUiThread { if (tabFor(sourceWeb) != null) goForward(sourceWeb) } }
+        @android.webkit.JavascriptInterface fun home() { runOnUiThread { if (tabFor(sourceWeb) != null) this@MainActivity.home(sourceWeb) } }
+        @android.webkit.JavascriptInterface fun bookmark() { runOnUiThread { toggleBookmark(sourceWeb) } }
+        @android.webkit.JavascriptInterface fun saveOffline() { runOnUiThread { this@MainActivity.saveOffline(sourceWeb) } }
         @android.webkit.JavascriptInterface fun newTab() { runOnUiThread { this@MainActivity.newTab() } }
         @android.webkit.JavascriptInterface fun openUrl(rawUrl: String) {
             runOnUiThread {
                 val uri = runCatching { Uri.parse(rawUrl) }.getOrNull()
-                if (uri != null && (uri.scheme == "https" || uri.scheme == "http")) {
-                    active()?.web?.loadUrl(uri.toString())
+                if (uri != null && (uri.scheme == "https" || uri.scheme == "http") && tabFor(sourceWeb) != null) {
+                    sourceWeb.loadUrl(uri.toString())
                 } else toast("Unsupported result link")
             }
         }
@@ -517,22 +530,25 @@ class MainActivity : Activity() {
             val query = rawQuery.trim().take(240)
             if (query.isBlank()) return
             runOnUiThread {
-                active()?.web?.evaluateJavascript("window.showSearchLoading && window.showSearchLoading(" + JSONObject.quote(query) + ")", null)
+                if (tabFor(sourceWeb) != null) {
+                    sourceWeb.evaluateJavascript("window.showSearchLoading && window.showSearchLoading(" + JSONObject.quote(query) + ")", null)
+                }
             }
             Thread {
                 val items = JSONArray()
                 var failed = false
+                var connection: HttpURLConnection? = null
                 try {
                     val endpoint = "https://html.duckduckgo.com/html/?q=" + URLEncoder.encode(query, "UTF-8")
-                    val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+                    val requestConnection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
                         requestMethod = "GET"
                         connectTimeout = 9000
                         readTimeout = 9000
                         setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/124.0 Mobile Safari/537.36")
                         setRequestProperty("Accept-Language", "en-US,en;q=0.9")
                     }
-                    val html = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
-                    connection.disconnect()
+                    connection = requestConnection
+                    val html = requestConnection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
                     val anchors = Regex("(?is)<a[^>]*class=[\"'][^\"']*result__a[^\"']*[\"'][^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>").findAll(html).toList()
                     val snippets = Regex("(?is)class=[\"'][^\"']*result__snippet[^\"']*[\"'][^>]*>(.*?)</(?:a|div)>").findAll(html).map { cleanSearchText(it.groupValues[1]) }.toList()
                     anchors.take(10).forEachIndexed { index, match ->
@@ -553,12 +569,18 @@ class MainActivity : Activity() {
                         }
                     }
                     if (items.length() == 0) failed = true
-                } catch (_: Exception) { failed = true }
+                } catch (_: Exception) {
+                    failed = true
+                } finally {
+                    connection?.disconnect()
+                }
                 runOnUiThread {
-                    active()?.web?.evaluateJavascript(
-                        "window.renderSearchResults && window.renderSearchResults(" + items.toString() + "," + JSONObject.quote(query) + "," + failed + ")",
-                        null
-                    )
+                    if (tabFor(sourceWeb) != null) {
+                        sourceWeb.evaluateJavascript(
+                            "window.renderSearchResults && window.renderSearchResults(" + items.toString() + "," + JSONObject.quote(query) + "," + failed + ")",
+                            null
+                        )
+                    }
                 }
             }.start()
         }
