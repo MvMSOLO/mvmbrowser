@@ -196,10 +196,29 @@ class MainActivity : Activity() {
         // Never expose it during the initial setup of a WebView that may load a remote URL.
         web.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): android.webkit.WebResourceResponse? {
-                // Keep the callback fast: rules are preloaded in memory and no network or disk I/O runs here.
-                if (!adBlockingEnabled || request.isForMainFrame) return null
+                // Enforce local-file policy for main-frame and subresource requests before ad filtering.
+                // This callback must remain fast and must not perform network I/O.
                 val uri = request.url
                 val scheme = uri.scheme?.lowercase()
+                if (scheme == "file") {
+                    val allowedLocalFile = if (request.isForMainFrame) {
+                        isAllowedLocalFileUrl(uri)
+                    } else {
+                        isAllowedLocalFileResource(uri)
+                    }
+                    if (!allowedLocalFile) {
+                        return android.webkit.WebResourceResponse(
+                            "text/plain",
+                            "UTF-8",
+                            403,
+                            "Forbidden",
+                            emptyMap(),
+                            java.io.ByteArrayInputStream(ByteArray(0))
+                        )
+                    }
+                }
+
+                if (!adBlockingEnabled || request.isForMainFrame) return null
                 if (scheme != "http" && scheme != "https") return null
                 if (!AdBlocker.shouldBlock(uri.host)) return null
                 return android.webkit.WebResourceResponse(
@@ -346,6 +365,13 @@ class MainActivity : Activity() {
         val normalizedUrl = uri.toString().substringBefore('#').substringBefore('?')
         if (normalizedUrl == HOME_ASSET_URL) return true
         val path = uri.path ?: return false
+        return LocalFilePolicy.isAllowedOfflineArchive(path, savedDir.absolutePath)
+    }
+
+    private fun isAllowedLocalFileResource(uri: Uri): Boolean {
+        if (uri.scheme?.lowercase() != "file" || !uri.authority.isNullOrEmpty()) return false
+        val path = uri.path ?: return false
+        if (LocalFilePolicy.isAllowedBundledAssetPath(path)) return true
         return LocalFilePolicy.isAllowedOfflineArchive(path, savedDir.absolutePath)
     }
 
