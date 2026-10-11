@@ -81,6 +81,9 @@ docker pull "$IMAGE"
 echo "==> Building Cromite Android ARM64 APK (may take hours)"
 docker run --rm \
   --user lg \
+  --env WORKSPACE=/home/lg/working_dir \
+  --env HOME=/home/lg/working_dir \
+  --env TARGET_ISDEBUG=false \
   --volume "$OUTPUT_DIR:/mvm-output" \
   --entrypoint /bin/bash \
   "$IMAGE" -lc '
