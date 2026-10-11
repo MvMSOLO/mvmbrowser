@@ -244,8 +244,29 @@ jobs:
           apk_sha256=$apk_sha
           METADATA
 
-          bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-pass.txt
+          fake_aapt="$test_root/fake-aapt"
+          cat > "$fake_aapt" <<'AAPT'
+          #!/usr/bin/env bash
+          [[ "${1:-}" == "dump" && "${2:-}" == "badging" ]] || exit 2
+          cat <<BADGING
+          package: name='org.chromium.chrome' versionCode='1' versionName='MVM test'
+          sdkVersion:'${FAKE_MIN_SDK:-29}'
+          native-code: 'arm64-v8a'
+          BADGING
+          AAPT
+          chmod +x "$fake_aapt"
+
+          AAPT="$fake_aapt" bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-pass.txt
           grep -Fq 'VERIFY PASSED' verifier-pass.txt
+          grep -Fq 'Package ID: org.chromium.chrome' verifier-pass.txt
+          grep -Fq 'Minimum Android API: 29' verifier-pass.txt
+          grep -Fq 'Native ABI: arm64-v8a' verifier-pass.txt
+
+          if AAPT="$fake_aapt" FAKE_MIN_SDK=28 bash scripts/verify-chromium-apk.sh "$test_apk" > verifier-api-fail.txt 2>&1; then
+            echo "Expected the APK verifier to reject minSdkVersion below API 29." >&2
+            exit 1
+          fi
+          grep -Fq 'expected to require API 29 or newer' verifier-api-fail.txt
 
           mkdir -p "$test_root/src/out/MVM/bin"
           cat > "$test_root/src/out/MVM/bin/chrome_public_apk" <<'WRAPPER'
