@@ -1,6 +1,11 @@
 name: Chromium Upstream Resource Watch
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/report-chromium-upstream-status.py"
+      - ".github/workflows/chromium-upstream-watch.yml"
   schedule:
     - cron: "30 8 * * 1"
   workflow_dispatch:
