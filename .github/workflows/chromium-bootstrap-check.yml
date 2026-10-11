@@ -14,9 +14,13 @@ on:
       - 'scripts/smoke-test-chromium-device.sh'
       - 'scripts/report-chromium-upstream-status.py'
       - 'scripts/check-cromite-release.py'
+      - 'scripts/build-cromite-android.sh'
+      - 'docs/CROMITE_ANDROID_BUILD.md'
       - 'docs/CROMITE_BASELINE_AUDIT.md'
       - 'tests/test_cromite_release.py'
       - 'scripts/check-cromite-release.py'
+      - 'scripts/build-cromite-android.sh'
+      - 'docs/CROMITE_ANDROID_BUILD.md'
       - 'docs/CROMITE_BASELINE_AUDIT.md'
       - 'tests/test_cromite_release.py'
       - 'tests/test_chromium_upstream_status.py'
@@ -37,6 +41,8 @@ on:
       - 'scripts/smoke-test-chromium-device.sh'
       - 'scripts/report-chromium-upstream-status.py'
       - 'scripts/check-cromite-release.py'
+      - 'scripts/build-cromite-android.sh'
+      - 'docs/CROMITE_ANDROID_BUILD.md'
       - 'docs/CROMITE_BASELINE_AUDIT.md'
       - 'tests/test_cromite_release.py'
       - 'tests/test_chromium_upstream_status.py'
@@ -60,6 +66,7 @@ jobs:
       - name: Validate Bash syntax
         run: |
           bash -n scripts/build-chromium-android.sh
+          bash -n scripts/build-cromite-android.sh
           bash -n scripts/read-chromium-version.sh
           bash -n scripts/check-chromium-gclient-config.sh
           bash -n scripts/check-chromium-build-host.sh
@@ -185,6 +192,12 @@ jobs:
           grep -Fq 'gh release create "$TAG" "$RELEASE_APK"' .github/workflows/android-apk-release.yml
           grep -Fq 'sha256sum "$RELEASE_APK"' .github/workflows/android-apk-release.yml
           grep -Fq 'releases/latest/download/MVM-Browser.apk' README.md
+          grep -Fq 'CROMITE_VERSION="153.0.8010.37"' scripts/build-cromite-android.sh
+          grep -Fq 'CROMITE_SHA="11507ac1061b5ea227806f5e84db5a57df6ccf6a"' scripts/build-cromite-android.sh
+          grep -Fq 'DRY RUN ONLY' scripts/build-cromite-android.sh
+          grep -Fq 'docker pull "$IMAGE"' scripts/build-cromite-android.sh
+          grep -Fq 'chrome_public_apk --offline' scripts/build-cromite-android.sh
+          grep -Fq 'CROMITE_MIN_FREE_GIB' scripts/build-cromite-android.sh
           ruby -e 'require "yaml"; YAML.load_file(".github/workflows/chromium-self-hosted-build.yml", aliases: true)'
           grep -Fq 'workflow_dispatch:' .github/workflows/chromium-self-hosted-build.yml
           grep -Fq 'default: "no"' .github/workflows/chromium-self-hosted-build.yml
