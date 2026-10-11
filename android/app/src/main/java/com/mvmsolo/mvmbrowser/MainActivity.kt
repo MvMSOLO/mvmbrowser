@@ -34,7 +34,13 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import java.io.File
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 import java.net.URLEncoder
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.UUID
 
 class MainActivity : Activity() {
@@ -47,7 +53,6 @@ class MainActivity : Activity() {
     private lateinit var address: EditText
     private lateinit var progress: ProgressBar
     private lateinit var webHost: FrameLayout
-    private lateinit var toolbarWeb: WebView
     private lateinit var tabsButton: TextView
     private val tabs = mutableListOf<BrowserTab>()
     private var activeIndex = 0
@@ -91,10 +96,14 @@ class MainActivity : Activity() {
             setPadding(dp(11), 0, 0, 0)
         }
         val spacer = View(this)
+        val backButton = action("‹") { goBack() }.apply { textSize = 24f; setPadding(dp(11), dp(3), dp(11), dp(3)) }
+        val homeButton = action("⌂") { home() }.apply { textSize = 19f; setPadding(dp(10), dp(6), dp(10), dp(6)) }
         tabsButton = action("TABS 1") { showTabs() }.apply { textSize = 10f }
         brandRow.addView(logo)
         brandRow.addView(title)
         brandRow.addView(spacer, LinearLayout.LayoutParams(0, 1, 1f))
+        brandRow.addView(backButton)
+        brandRow.addView(homeButton)
         brandRow.addView(tabsButton)
         root.addView(brandRow)
 
@@ -138,18 +147,6 @@ class MainActivity : Activity() {
         webHost = FrameLayout(this)
         root.addView(webHost, LinearLayout.LayoutParams(-1, 0, 1f))
 
-        toolbarWeb = WebView(this).apply {
-            setBackgroundColor(Color.TRANSPARENT)
-            overScrollMode = View.OVER_SCROLL_NEVER
-            isVerticalScrollBarEnabled = false
-            isHorizontalScrollBarEnabled = false
-            settings.javaScriptEnabled = true
-            settings.allowFileAccess = true
-            settings.allowContentAccess = false
-            addJavascriptInterface(BrowserBridge(), "BrowserBridge")
-            loadUrl("file:///android_asset/toolbar.html")
-        }
-        root.addView(toolbarWeb, LinearLayout.LayoutParams(-1, dp(56)))
         setContentView(root)
     }
 
@@ -396,6 +393,76 @@ class MainActivity : Activity() {
         @android.webkit.JavascriptInterface fun bookmark() { runOnUiThread { toggleBookmark() } }
         @android.webkit.JavascriptInterface fun saveOffline() { runOnUiThread { this@MainActivity.saveOffline() } }
         @android.webkit.JavascriptInterface fun newTab() { runOnUiThread { this@MainActivity.newTab() } }
+        @android.webkit.JavascriptInterface fun openUrl(rawUrl: String) {
+            runOnUiThread {
+                val uri = runCatching { Uri.parse(rawUrl) }.getOrNull()
+                if (uri != null && (uri.scheme == "https" || uri.scheme == "http")) {
+                    active()?.web?.loadUrl(uri.toString())
+                } else toast("Unsupported result link")
+            }
+        }
+        @android.webkit.JavascriptInterface fun search(rawQuery: String) {
+            val query = rawQuery.trim().take(240)
+            if (query.isBlank()) return
+            runOnUiThread {
+                active()?.web?.evaluateJavascript("window.showSearchLoading && window.showSearchLoading(" + JSONObject.quote(query) + ")", null)
+            }
+            Thread {
+                val items = JSONArray()
+                var failed = false
+                try {
+                    val endpoint = "https://html.duckduckgo.com/html/?q=" + URLEncoder.encode(query, "UTF-8")
+                    val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+                        requestMethod = "GET"
+                        connectTimeout = 9000
+                        readTimeout = 9000
+                        setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/124.0 Mobile Safari/537.36")
+                        setRequestProperty("Accept-Language", "en-US,en;q=0.9")
+                    }
+                    val html = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                    connection.disconnect()
+                    val anchors = Regex("(?is)<a[^>]*class=[\"'][^\"']*result__a[^\"']*[\"'][^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>").findAll(html).toList()
+                    val snippets = Regex("(?is)class=[\"'][^\"']*result__snippet[^\"']*[\"'][^>]*>(.*?)</(?:a|div)>").findAll(html).map { cleanSearchText(it.groupValues[1]) }.toList()
+                    anchors.take(10).forEachIndexed { index, match ->
+                        var resultUrl = decodeHtml(match.groupValues[1])
+                        if (resultUrl.startsWith("//")) resultUrl = "https:$resultUrl"
+                        if (resultUrl.startsWith("/l/")) resultUrl = "https://duckduckgo.com$resultUrl"
+                        val parsed = Uri.parse(resultUrl)
+                        if (parsed.path.orEmpty().startsWith("/l/")) {
+                            resultUrl = parsed.getQueryParameter("uddg") ?: resultUrl
+                        }
+                        resultUrl = runCatching { java.net.URLDecoder.decode(resultUrl, "UTF-8") }.getOrDefault(resultUrl)
+                        if (resultUrl.startsWith("http://") || resultUrl.startsWith("https://")) {
+                            val item = JSONObject()
+                            item.put("url", resultUrl)
+                            item.put("displayUrl", Uri.parse(resultUrl).host ?: resultUrl)
+                            item.put("title", cleanSearchText(match.groupValues[2]).take(180))
+                            item.put("snippet", snippets.getOrNull(index).orEmpty().take(500))
+                            items.put(item)
+                        }
+                    }
+                    if (items.length() == 0) failed = true
+                } catch (_: Exception) { failed = true }
+                runOnUiThread {
+                    active()?.web?.evaluateJavascript(
+                        "window.renderSearchResults && window.renderSearchResults(" + items.toString() + "," + JSONObject.quote(query) + "," + failed + ")",
+                        null
+                    )
+                }
+            }.start()
+        }
+    }
+
+    private fun cleanSearchText(raw: String): String {
+        return decodeHtml(raw.replace(Regex("(?is)<[^>]+>"), " "))
+            .replace(Regex("\\s+"), " ").trim()
+    }
+
+    private fun decodeHtml(raw: String): String {
+        return raw.replace("&amp;", "&").replace("&quot;", "\"")
+            .replace("&#39;", "'").replace("&apos;", "'")
+            .replace("&lt;", "<").replace("&gt;", ">")
+            .replace("&nbsp;", " ").replace("&#x27;", "'")
     }
 
     private fun action(text: String, callback: () -> Unit): TextView = label(text, 14f, textColor, true).apply {
@@ -438,7 +505,6 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         tabs.forEach { it.web.stopLoading(); it.web.destroy() }
         tabs.clear()
-        if (::toolbarWeb.isInitialized) { toolbarWeb.stopLoading(); toolbarWeb.destroy() }
         super.onDestroy()
     }
 }
