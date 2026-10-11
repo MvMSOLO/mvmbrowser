@@ -49,6 +49,9 @@ jobs:
           grep -Fq 'ALLOW_UNKNOWN_MEMORY=1' scripts/build-chromium-android.sh
           grep -Fq 'CHROMIUM_REVISION contains unsupported characters' scripts/build-chromium-android.sh
           grep -Fq 'CHROMIUM_REVISION=' scripts/build-chromium-android.sh
+          grep -Fq 'FETCH_HEAD^{commit}' scripts/build-chromium-android.sh
+          grep -Fq 'MVM-Chromium-arm64.metadata.txt' scripts/build-chromium-android.sh
+          grep -Fq 'GN_ARGS_SHA256=' scripts/build-chromium-android.sh
           grep -Fq '/sys/fs/cgroup/memory.max' scripts/build-chromium-android.sh
           grep -Fq '/sys/fs/cgroup/memory.max' scripts/check-chromium-build-host.sh
           grep -Fq 'chrome_public_apk' scripts/build-chromium-android.sh
