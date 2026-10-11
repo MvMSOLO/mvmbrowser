@@ -64,6 +64,34 @@ if ! unzip -Z1 "$APK" | grep -Fxq 'AndroidManifest.xml'; then
   fail "APK archive does not contain AndroidManifest.xml at its root."
 fi
 
+# When Android Build Tools are available, inspect the binary manifest too.
+# The ZIP-only fixture path remains useful for offline CI without an Android SDK.
+AAPT_BIN="${AAPT:-}"
+if [[ -z "$AAPT_BIN" ]] && command -v aapt >/dev/null 2>&1; then
+  AAPT_BIN="$(command -v aapt)"
+fi
+if [[ -z "$AAPT_BIN" ]]; then
+  SDK_BUILD_TOOLS="${CHROMIUM_ROOT:-$HOME/chromium-mvm}/src/third_party/android_sdk/public/build-tools"
+  if [[ -d "$SDK_BUILD_TOOLS" ]]; then
+    AAPT_BIN="$(find "$SDK_BUILD_TOOLS" -type f -name aapt -perm -111 -print -quit)"
+  fi
+fi
+if [[ -n "$AAPT_BIN" ]]; then
+  [[ -x "$AAPT_BIN" ]] || fail "AAPT is not executable: $AAPT_BIN"
+  BADGING="$("$AAPT_BIN" dump badging "$APK")" || fail "aapt could not read the APK binary manifest."
+  PACKAGE_NAME="$(printf '%s\n' "$BADGING" | sed -n "s/^package: name='\([^']*\)'.*/\1/p" | head -n 1)"
+  MIN_SDK="$(printf '%s\n' "$BADGING" | sed -n "s/^sdkVersion:'\([0-9][0-9]*\)'.*/\1/p" | head -n 1)"
+  [[ -n "$PACKAGE_NAME" ]] || fail "APK package ID could not be read from Android manifest."
+  [[ "$MIN_SDK" =~ ^[0-9]+$ ]] || fail "APK minSdkVersion could not be read from Android manifest."
+  (( MIN_SDK >= 29 )) || fail "APK minSdkVersion is $MIN_SDK; this Chrome public target is expected to require API 29 or newer."
+  printf '%s\n' "$BADGING" | grep -Eq "^native-code:.*'arm64-v8a'" || fail "APK manifest/native-code metadata does not list arm64-v8a."
+  echo "Package ID: $PACKAGE_NAME"
+  echo "Minimum Android API: $MIN_SDK"
+  echo "Native ABI: arm64-v8a"
+else
+  echo "NOTE: aapt not found; binary Android manifest metadata check was skipped."
+fi
+
 echo "VERIFY PASSED: APK structure, GN args, metadata and ZIP integrity agree."
 echo "APK: $APK"
 echo "Chromium revision: $CHROMIUM_REVISION"
