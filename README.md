@@ -23,12 +23,14 @@ MVM Browser is not yet running a bundled Chromium engine. Review the research do
 
 - [Engine migration plan](docs/CHROMIUM_ENGINE_MIGRATION.md) — architecture and first proof-build steps.
 - [Engine/resource research](docs/ENGINE_RESOURCE_RESEARCH.md) — host requirements, cloud-account constraints, and public pricing comparisons.
-- [Chromium base options](docs/CHROMIUM_BASE_OPTIONS.md) — upstream Chromium vs. Cromite vs. GeckoView, including version, maintenance, and licensing caveats.
+- [Chromium base options](docs/CHROMIUM_BASE_OPTIONS.md) — upstream Chromium, Cromite source forks, and GeckoView, including version, maintenance, and licensing caveats.
 - [Distribution/security checklist](docs/CHROMIUM_DISTRIBUTION_CHECKLIST.md) — notices, source provenance, and update responsibilities.
 - [Read-only build-host checker](scripts/check-chromium-build-host.sh) — checks Linux architecture, effective RAM, and free disk without downloading source.
 - [Chromium build script](scripts/build-chromium-android.sh) — builds an upstream arm64 proof APK on a suitable Linux host; it has not yet been run successfully in this environment.
+- [Upstream version report script](scripts/report-chromium-upstream-status.py) — read-only parser for official Chrome Android release notes and public Cromite release/commit metadata.
+- [Weekly upstream resource watch](https://github.com/MvMSOLO/mvmbrowser/actions/workflows/chromium-upstream-watch.yml) — runs every Monday at 08:30 UTC, saves a 30-day report artifact, and can also be triggered manually.
 
-The current script-validation workflow checks Bash syntax and preflight behavior only; it does not compile Chromium.
+The bootstrap CI checks script syntax, tests the report parser without network calls, and verifies that resource guards stop a Chromium checkout before source download. It does not compile Chromium. The live release-watch workflow has been tested against public metadata, but its report is only a version signal—not a security audit.
 
 ## Build locally
 
