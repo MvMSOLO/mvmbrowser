@@ -16,13 +16,31 @@ echo "Chromium Android build-host report"
 echo "Target checkout path: $ROOT"
 echo "CPU threads visible: $(getconf _NPROCESSORS_ONLN 2>/dev/null || echo unknown)"
 
+# Use the lower of host-visible RAM and container/cgroup memory limits.
+MEM_KB=0
 if [[ -r /proc/meminfo ]]; then
   MEM_KB="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
+fi
+if [[ -r /sys/fs/cgroup/memory.max ]]; then
+  CGROUP_BYTES="$(cat /sys/fs/cgroup/memory.max)"
+  if [[ "$CGROUP_BYTES" =~ ^[0-9]+$ ]] && (( CGROUP_BYTES > 0 )); then
+    CGROUP_KB="$((CGROUP_BYTES / 1024))"
+    if (( MEM_KB == 0 || CGROUP_KB < MEM_KB )); then MEM_KB="$CGROUP_KB"; fi
+  fi
+elif [[ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]]; then
+  CGROUP_BYTES="$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)"
+  if [[ "$CGROUP_BYTES" =~ ^[0-9]+$ ]] && (( CGROUP_BYTES > 0 && CGROUP_BYTES < 1099511627776 )); then
+    CGROUP_KB="$((CGROUP_BYTES / 1024))"
+    if (( MEM_KB == 0 || CGROUP_KB < MEM_KB )); then MEM_KB="$CGROUP_KB"; fi
+  fi
+fi
+
+if (( MEM_KB > 0 )); then
   MEM_GIB="$((MEM_KB / 1024 / 1024))"
-  echo "Detected RAM: ${MEM_GIB} GiB"
+  echo "Detected effective RAM limit: ${MEM_GIB} GiB"
 else
   MEM_GIB=0
-  echo "Detected RAM: unknown (/proc/meminfo unavailable)"
+  echo "Detected RAM: unknown (/proc/meminfo and cgroup limits unavailable)"
 fi
 
 DISK_BASE="$ROOT"
