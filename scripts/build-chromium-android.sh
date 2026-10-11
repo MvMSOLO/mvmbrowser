@@ -25,7 +25,11 @@ SRC_DIR="$CHROMIUM_ROOT/src"
 OUT_DIR="out/MVM"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-# Chromium's own checkout instructions require paths without whitespace.
+# Chromium's own checkout instructions require absolute paths without whitespace.
+# Resolve relative paths while still in the caller's working directory so PATH
+# remains valid after the script changes into the Chromium source tree.
+if [[ "$CHROMIUM_ROOT" != /* ]]; then CHROMIUM_ROOT="$PWD/$CHROMIUM_ROOT"; fi
+if [[ "$DEPOT_TOOLS" != /* ]]; then DEPOT_TOOLS="$PWD/$DEPOT_TOOLS"; fi
 if [[ "$CHROMIUM_ROOT" =~ [[:space:]] || "$DEPOT_TOOLS" =~ [[:space:]] ]]; then
   echo "ERROR: Chromium and depot_tools paths must not contain whitespace." >&2
   exit 2
@@ -67,6 +71,10 @@ fi
 
 mkdir -p "$CHROMIUM_ROOT"
 CHROMIUM_ROOT="$(cd "$CHROMIUM_ROOT" && pwd)"
+if [[ "$CHROMIUM_ROOT" =~ [[:space:]] ]]; then
+  echo "ERROR: Resolved Chromium workspace path contains whitespace: $CHROMIUM_ROOT" >&2
+  exit 2
+fi
 SRC_DIR="$CHROMIUM_ROOT/src"
 
 # Fail before a large checkout if the host cannot meet Chromium's
