@@ -164,10 +164,12 @@ fi
 DEST="$CHROMIUM_ROOT/MVM-Chromium-arm64.apk"
 cp "$APK" "$DEST"
 BUILD_REVISION="$(git rev-parse HEAD)"
+DEPOT_TOOLS_REVISION_ACTUAL="$(git -C "$DEPOT_TOOLS" rev-parse HEAD)"
 APK_SHA256="$(sha256sum "$DEST" | awk '{print $1}')"
 echo
 echo "SUCCESS: Upstream Chromium Android browser built."
 echo "APK: $DEST"
 echo "Chromium revision: $BUILD_REVISION"
+echo "depot_tools revision: $DEPOT_TOOLS_REVISION_ACTUAL"
 echo "APK SHA-256: $APK_SHA256"
 echo "NOTE: This is an unbranded Chromium proof build, not yet the finished MVM Browser."
