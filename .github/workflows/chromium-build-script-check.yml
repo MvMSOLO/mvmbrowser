@@ -1,0 +1,28 @@
+name: Chromium build script validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build-chromium-android.sh"
+      - ".github/workflows/chromium-build-script-check.yml"
+  pull_request:
+    paths:
+      - "scripts/build-chromium-android.sh"
+      - ".github/workflows/chromium-build-script-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shell-syntax:
+    name: Validate Chromium bootstrap script
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Validate Bash syntax
+        run: bash -n scripts/build-chromium-android.sh
+      - name: Confirm required build target is documented
+        run: grep -q 'chrome_public_apk' scripts/build-chromium-android.sh
