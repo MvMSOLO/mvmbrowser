@@ -21,7 +21,27 @@ References:
 
 The current app's capability-by-capability work is tracked in [CHROMIUM_FEATURE_PORT_MATRIX.md](CHROMIUM_FEATURE_PORT_MATRIX.md). Use it as the acceptance checklist for the downstream shell port; the existing WebView features are not automatically inherited by the proof APK.
 
-1. **Choose the Chromium base:** use the upstream Chromium Android browser source as the engine/browser base, or a maintained open-source Chromium browser fork whose build and redistribution terms fit the project. Do not vendor an imaginary AAR.
+### Preferred shortcut to evaluate first: Cromite source fork
+
+The first candidate to evaluate is [Cromite](https://github.com/uazo/cromite), a complete Chromium-based Android browser project, rather than trying to embed its APK inside the existing Kotlin app.
+
+- Its upstream README describes Android ARM64, ARM32, and x86-64 builds and Android 10+ support.
+- Its build guide documents a ready-to-build Docker image per release, which may reduce environment setup compared with starting from a raw Chromium checkout. The image is a build environment, not a drop-in engine library.
+- The latest release visible during this research was `v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a`, published 2026-09-15. Recheck upstream release freshness and security fixes before adopting it.
+- The project declares GPL-3.0 for its patches. A fork/distribution needs a proper license and third-party notice review, and compliance with source-availability and other applicable obligations. Do not copy only the APK or remove its notices.
+- Its Android 10+ baseline means this route does not preserve the current MVM app's declared Android 7–9 support without separate engineering.
+
+**Architecture choice:** fork/port MVM features into Cromite's browser source and build a distinct MVM-branded APK. Do not package the Cromite APK as an asset, and do not treat its SystemWebView APK as a library that can be embedded in this app.
+
+Useful upstream references:
+- Repository and project status: https://github.com/uazo/cromite
+- Latest published release: https://github.com/uazo/cromite/releases/latest
+- Build instructions and Docker-image workflow: https://github.com/uazo/cromite/blob/master/docs/HOW_TO_BUILD.md
+- License: https://github.com/uazo/cromite/blob/master/LICENSE
+
+This is a candidate recommendation, not yet an approved migration: first review the source, latest release/security state, license requirements, build image provenance, and whether MVM's feature list can be ported cleanly.
+
+1. **Choose the Chromium base:** evaluate Cromite first; if it fails the maintenance, license, or feature requirements, use upstream Chromium Android browser source. Do not vendor an imaginary AAR.
 2. **Prove the build environment:** build an unmodified Android Chromium APK in a dedicated Linux environment before porting MVM UI. Chromium's checkout and build are far larger than a normal Gradle project; the current Android APK CI workflow is not sufficient by itself.
 3. **Create a reproducible build:** pin the upstream revision, build tools, target ABI(s), and security-update procedure.
 4. **Port MVM identity and features:** integrate the MVM brand, new-tab experience, toolbar, tabs, bookmarks, history, and downloads into the Chromium-based browser shell.
