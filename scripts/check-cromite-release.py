@@ -25,12 +25,12 @@ from pathlib import Path
 from typing import Any
 
 RELEASE_API = "https://api.github.com/repos/uazo/cromite/releases/latest"
-TAG_RE = re.compile(r"^v?(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)-([0-9a-f]{40})$")
+TAG_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)\.(\d+)-([0-9a-f]{40})$")
 SHA_RE = re.compile(r"^[0-9a-fA-F]{40}$")
 
 
 def version_tuple(value: str) -> tuple[int, int, int, int]:
-    match = re.fullmatch(r"(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)", value.strip())
+    match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)\.(\d+)", value.strip())
     if not match:
         raise ValueError(f"Invalid version {value!r}; expected MAJOR.MINOR.BUILD.PATCH")
     return tuple(int(part) for part in match.groups())
