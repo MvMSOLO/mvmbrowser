@@ -44,6 +44,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
+private const val HOME_ASSET_URL = HOME_ASSET_URL
+
 class MainActivity : Activity() {
     private val bg = Color.rgb(7, 10, 16)
     private val panel = Color.rgb(13, 20, 32)
@@ -66,7 +68,7 @@ class MainActivity : Activity() {
         val id: String = UUID.randomUUID().toString(),
         val web: WebView,
         var title: String = "New tab",
-        var url: String = "file:///android_asset/home.html"
+        var url: String = HOME_ASSET_URL
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -156,7 +158,7 @@ class MainActivity : Activity() {
         setContentView(root)
     }
 
-    private fun newTab(url: String = "file:///android_asset/home.html") {
+    private fun newTab(url: String = HOME_ASSET_URL) {
         val web = WebView(this)
         configure(web)
         val tab = BrowserTab(web = web, url = url)
@@ -214,28 +216,23 @@ class MainActivity : Activity() {
                 val uri = request.url
                 val scheme = uri.scheme?.lowercase()
                 if (scheme == "http" || scheme == "https" || scheme == "about") return false
-                if (scheme == "file") {
-                    val path = uri.path.orEmpty()
-                    val localArchive = path.startsWith(savedDir.absolutePath + File.separator)
-                    val bundledAsset = path.startsWith("/android_asset/")
-                    return !(localArchive || bundledAsset)
-                }
+                if (scheme == "file") return !isAllowedLocalFileUrl(uri)
                 return true
             }
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
-                if (url.startsWith("file:///android_asset/home.html")) {
+                if (isBundledHomeUrl(url)) {
                     view.addJavascriptInterface(BrowserBridge(), "BrowserBridge")
                 } else {
                     view.removeJavascriptInterface("BrowserBridge")
                 }
                 progress.visibility = View.VISIBLE
                 progress.progress = 4
-                address.setText(if (url.startsWith("file:///android_asset/home.html")) "" else url)
+                address.setText(if (isBundledHomeUrl(url)) "" else url)
                 tabFor(view)?.url = url
             }
             override fun onPageFinished(view: WebView, url: String) {
                 progress.visibility = View.GONE
-                address.setText(if (url.startsWith("file:///android_asset/home.html")) "" else url)
+                address.setText(if (isBundledHomeUrl(url)) "" else url)
                 tabFor(view)?.apply { this.url = url; title = view.title ?: url }
                 updateTabButton()
             }
@@ -310,7 +307,7 @@ class MainActivity : Activity() {
         val web = tabs[activeIndex].web
         (web.parent as? ViewGroup)?.removeView(web)
         webHost.addView(web, FrameLayout.LayoutParams(-1, -1))
-        address.setText(if (tabs[activeIndex].url.startsWith("file:///android_asset/home.html")) "" else tabs[activeIndex].url)
+        address.setText(if (tabs[activeIndex].isBundledHomeUrl(url)) "" else tabs[activeIndex].url)
         updateTabButton()
     }
 
@@ -327,15 +324,36 @@ class MainActivity : Activity() {
         }
         try {
             val uri = Uri.parse(target)
-            if (uri.scheme == "https" || uri.scheme == "http" || uri.scheme == "file") {
+            val allowed = when (uri.scheme?.lowercase()) {
+                "https", "http" -> true
+                "file" -> isAllowedLocalFileUrl(uri)
+                else -> false
+            }
+            if (allowed) {
                 active()?.web?.loadUrl(target)
                 (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(address.windowToken, 0)
                 address.clearFocus()
-            } else toast("Only web URLs are supported")
-        } catch (_: Exception) { toast("Invalid address") }
+            } else {
+                toast("Only web URLs and saved offline pages are supported")
+            }
+        } catch (_: Exception) {
+            toast("Invalid address")
+        }
     }
 
-    private fun home() { active()?.web?.loadUrl("file:///android_asset/home.html") }
+    private fun isAllowedLocalFileUrl(uri: Uri): Boolean {
+        if (uri.scheme?.lowercase() != "file" || !uri.authority.isNullOrEmpty()) return false
+        val normalizedUrl = uri.toString().substringBefore('#').substringBefore('?')
+        if (normalizedUrl == HOME_ASSET_URL) return true
+        val path = uri.path ?: return false
+        return LocalFilePolicy.isAllowedOfflineArchive(path, savedDir.absolutePath)
+    }
+
+    private fun isBundledHomeUrl(url: String): Boolean {
+        return url.substringBefore('#').substringBefore('?') == HOME_ASSET_URL
+    }
+
+    private fun home() { active()?.web?.loadUrl(HOME_ASSET_URL) }
     private fun goBack() { active()?.let { if (it.web.canGoBack()) it.web.goBack() else home() } }
     private fun goForward() { active()?.let { if (it.web.canGoForward()) it.web.goForward() else toast("No forward page") } }
     override fun onBackPressed() {
@@ -399,7 +417,13 @@ class MainActivity : Activity() {
         if (items.isEmpty()) { toast("Nothing saved yet"); return }
         AlertDialog.Builder(this).setTitle(title).setItems(items.map { if (offline) File(it).name else it }.toTypedArray()) { _, which ->
             val item = items[which]
-            if (offline) active()?.web?.loadUrl(Uri.fromFile(File(item)).toString()) else {
+            if (offline) {
+                if (!LocalFilePolicy.isAllowedOfflineArchive(item, savedDir.absolutePath)) {
+                    toast("Saved page is unavailable or outside offline storage")
+                } else {
+                    active()?.web?.loadUrl(Uri.fromFile(File(item)).toString())
+                }
+            } else {
                 if (tabs.size > 1) newTab(item) else active()?.web?.loadUrl(item)
             }
         }.setNegativeButton("Close", null).show()
