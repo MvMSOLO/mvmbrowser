@@ -21,6 +21,13 @@ class AdBlockerTest {
     }
 
     @Test
+    fun blocksAdditionalTrackerHosts() {
+        assertTrue(AdBlocker.shouldBlock("cdn.demdex.net"))
+        assertTrue(AdBlocker.shouldBlock("ads.applovin.com"))
+        assertTrue(AdBlocker.shouldBlock("agkn.com"))
+    }
+
+    @Test
     fun doesNotBlockLookalikeDomain() {
         assertFalse(AdBlocker.shouldBlock("doubleclick.net.example.org"))
     }
