@@ -77,6 +77,14 @@ Official provider links:
 
 Important: cloud build machines are paid resources. No instance has been launched and no billing-enabled account has been accessed. DigitalOcean's terms say its services are not intended for users under 18 unless they have sufficient legal consent, permission, and capacity under applicable jurisdiction; account eligibility and any required adult/guardian involvement must be confirmed before using that provider. On DigitalOcean's published Basic 8-vCPU/16-GiB plan, compute would be roughly $0.57 for four billed hours or $1.43 for ten billed hours at $0.14286/hour. The 16-vCPU/32-GiB CPU-Optimized plan would be roughly $2 for four billed hours or $5 for ten billed hours at $0.50/hour. These are compute-only estimates; Chromium checkout/build duration, data transfer, taxes, retained volumes, and snapshots can change the total. DigitalOcean's documentation describes per-second billing with a 60-second/$0.01 minimum. Stop/destroy an ephemeral instance when finished and check for separately retained volumes, snapshots, or other billable resources.
 
+
+
+### Connected-account availability check (2026-10-11)
+
+The connected DigitalOcean account API returned an account-status warning that the team's Droplet limit had been reached. Its current Droplet list returned no active Droplets. The size catalogue returned by the integration contained 43 plans and none met both the 100+ GiB disk requirement and the recommended 16+ GiB RAM target. This means a suitable build host is **not currently provisionable through the available account state**; do not retry blindly or create a smaller machine that cannot build Chromium. The account owner needs to resolve the quota/status warning in the provider dashboard and confirm that a sufficiently large plan is actually available in the chosen region.
+
+The public price table above is only a market comparison, not a guarantee that the connected account can provision those particular sizes. No new Droplet has been created.
+
 ## Recommended implementation sequence
 
 1. Identify a Linux x86-64 build host with 100+ GB free disk and 16+ GB RAM (or a suitable self-hosted machine).
@@ -98,7 +106,8 @@ Important: cloud build machines are paid resources. No instance has been launche
 
 ## Follow-up checklist
 
-- [ ] Select a host: DigitalOcean Basic 8-vCPU/16-GiB/320-GiB is the lower-cost candidate; CPU-Optimized 16-vCPU/32-GiB/200-GiB is the faster alternative. GitHub larger runners require an eligible paid organization plan.
+- [ ] Resolve the DigitalOcean account quota/status warning and verify a suitable disk/RAM size is actually available via the connected account; the current returned plan list does not include a build-suitable option.
+- [ ] If using GitHub larger runners instead, confirm the repository belongs to an eligible paid organization plan and check the complete price for the required runner/duration.
 - [ ] Confirm the exact region, hourly rate, disk capacity, budget limit, and cleanup plan before creating any paid resource.
 - [ ] Confirm an eligible Linux build host and exact free disk/RAM.
 - [ ] Run bash scripts/check-chromium-build-host.sh on the candidate Linux host before any source download.
