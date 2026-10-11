@@ -40,18 +40,22 @@ jobs:
           CONFIRM_BUILD: ${{ inputs.confirm_build }}
         shell: bash
         run: |
-          if [[ "$CONFIRM_BUILD" == "yes" ]]; then
+          if [[ "$CONFIRM_BUILD" == "yes" && "$GITHUB_REF" == "refs/heads/main" ]]; then
             echo "approved=true" >> "$GITHUB_OUTPUT"
-            echo "Explicit confirmation received."
+            echo "Explicit confirmation received on main."
           else
             echo "approved=false" >> "$GITHUB_OUTPUT"
-            echo "No Chromium build was started. Select confirm_build=yes to authorize the long-running job."
+            if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+              echo "No Chromium build was started. Dispatch this workflow from main only."
+            else
+              echo "No Chromium build was started. Select confirm_build=yes to authorize the long-running job."
+            fi
           fi
 
   build:
     name: Build and verify upstream Chromium arm64 APK
     needs: confirmation
-    if: needs.confirmation.outputs.approved == 'true'
+    if: needs.confirmation.outputs.approved == 'true' && github.ref == 'refs/heads/main'
     runs-on: [self-hosted, linux, x64, chromium-builder]
     timeout-minutes: 360
     env:
