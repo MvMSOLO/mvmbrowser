@@ -37,7 +37,7 @@ Run the build only on a host that meets the report's requirements, after confirm
 
 ```bash
 bash scripts/check-chromium-build-host.sh
-CHROMIUM_REVISION=<commit-or-ref> DEPOT_TOOLS_REVISION=<commit-or-ref> bash scripts/build-chromium-android.sh
+CHROMIUM_REVISION='PUT_FULL_CHROMIUM_COMMIT_SHA_HERE' DEPOT_TOOLS_REVISION='PUT_FULL_DEPOT_TOOLS_COMMIT_SHA_HERE' bash scripts/build-chromium-android.sh
 ```
 
 At completion, the script reports the Chromium four-part version from chrome/VERSION, actual Chromium commit, `depot_tools` commit, GN-args SHA-256, and APK SHA-256. The offline verifier requires a valid MAJOR.MINOR.BUILD.PATCH value in the metadata. It also writes `MVM-Chromium-arm64.metadata.txt` and copies the effective GN args to `MVM-Chromium-arm64.args.gn` next to the APK. When `CHROMIUM_REVISION` is supplied, the script resolves it to an exact commit (using `FETCH_HEAD` for remotely fetched refs) before syncing dependencies. When `DEPOT_TOOLS_REVISION` is supplied, it does the same for `depot_tools` and records whether automatic tool updates were disabled. Save the APK, metadata, GN args file, and build logs together when comparing repeat builds.
@@ -64,7 +64,17 @@ bash scripts/smoke-test-chromium-device.sh --install --serial DEVICE_SERIAL
 
 The `--install` mode requires an interactive confirmation before it installs the locally built APK and opens `https://example.com`. After it completes, visually confirm that the page rendered; the script cannot certify UI rendering by command success alone.
 
-The expected output is an unbranded Chromium APK named `MVM-Chromium-arm64.apk` under the chosen Chromium workspace. The script requests noninteractive dependency installation, checks that sudo is usable before a large checkout for non-root users, syncs dependencies without running hooks twice, and invokes the source-cleanliness guard before dependency installation and again after sync/hooks. The source guard can also be run by itself to inspect an existing checkout without network access.
+The expected output is an unbranded Chromium APK named `MVM-Chromium-arm64.apk` under the chosen Chromium workspace. The script requests noninteractive dependency installation, checks that sudo is usable before a large checkout for non-root users, and syncs dependencies without running hooks twice. It also invokes the source-cleanliness guard before dependency installation and again after sync/hooks.
+
+After the checkout is present, these read-only diagnostics can be run separately:
+
+```bash
+bash scripts/check-chromium-source-clean.sh "$HOME/chromium-mvm/src"
+bash scripts/check-chromium-gclient-config.sh "$HOME/chromium-mvm/.gclient"
+bash scripts/read-chromium-version.sh "$HOME/chromium-mvm/src/chrome/VERSION"
+```
+
+The build automatically runs the latter two checks at the appropriate points; these separate commands are useful when diagnosing an existing checkout. The two revision values in the build example must be replaced with real full 40-character Git commit SHAs.
 
 A manual workflow is also available at [chromium-self-hosted-build.yml](../.github/workflows/chromium-self-hosted-build.yml). It requires a runner labelled self-hosted, linux, x64, chromium-builder with enough RAM/disk, noninteractive dependency-install permissions, and two full 40-character commit SHAs. It only accepts a dispatch from main with confirm_build=yes; it uploads the APK plus provenance files for 14 days. It does not provision infrastructure and does not install the APK on a device. The script has been committed, but it has **not** been executed in this environment; do not treat the APK as built or tested yet.
 
