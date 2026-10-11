@@ -113,13 +113,14 @@ fi
 
 echo "==> Installing official Chromium Linux/Android build dependencies"
 if (( EUID == 0 )); then
-  build/install-build-deps.sh
+  build/install-build-deps.sh --no-prompt
 else
-  sudo build/install-build-deps.sh
+  sudo build/install-build-deps.sh --no-prompt
 fi
 
-echo "==> Syncing Chromium dependencies and hooks"
-gclient sync
+echo "==> Syncing Chromium dependencies without running hooks twice"
+gclient sync --nohooks
+echo "==> Running Chromium hooks once"
 gclient runhooks
 
 echo "==> Generating arm64 Android browser build"
