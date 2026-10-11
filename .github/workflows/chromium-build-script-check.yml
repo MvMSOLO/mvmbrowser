@@ -1,15 +1,8 @@
-name: Chromium build script validation
+name: Chromium build script quick check (manual)
 
+# Automatic validation lives in chromium-bootstrap-check.yml.
+# Keep this small one available for an intentional manual syntax check.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "scripts/build-chromium-android.sh"
-      - ".github/workflows/chromium-build-script-check.yml"
-  pull_request:
-    paths:
-      - "scripts/build-chromium-android.sh"
-      - ".github/workflows/chromium-build-script-check.yml"
   workflow_dispatch:
 
 permissions:
