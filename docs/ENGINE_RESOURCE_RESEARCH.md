@@ -54,6 +54,27 @@ This note tracks realistic engine and build-resource options for moving MVM Brow
 - Network: fast and stable connection; checkout and dependency synchronization can take hours.
 - CI note: the current Android Gradle workflows prove the existing WebView app builds; they do not prove Chromium source can be built.
 
+## Build-host options and current public price snapshot
+
+Prices below are a research snapshot as of 2026-10-11, before taxes, optional storage, or other provider-specific charges. Check the provider's calculator and account eligibility before launching anything.
+
+| Candidate | Published configuration | Published price | Assessment |
+| --- | --- | --- | --- |
+| DigitalOcean CPU-Optimized Droplet | 16 vCPU, 32 GiB RAM, 200 GiB SSD | $0.50/hour; $336/month cap shown in current price table | Best initial cloud candidate on price/spec balance, if the chosen region offers it. A 200-GiB disk leaves practical headroom beyond Chromium's 100-GB free-space minimum. |
+| GitHub Actions larger runner | 8 vCPU, 32 GB RAM, 300 GB SSD | Linux 8-core rate shown as $0.022/minute (about $1.32 per billed hour) | Convenient ephemeral CI worker, but confirm the account/repository can use paid larger runners. Build logs and timeouts need to be managed. |
+| GitHub Actions larger runner | 16 vCPU, 64 GB RAM, 600 GB SSD | Linux 16-core rate shown as $0.042/minute (about $2.52 per billed hour) | More memory/disk headroom, but higher cost; requires an appropriate billing setup. |
+| Google Cloud Compute Engine | E2 high-memory machine family includes 8-vCPU/64-GB and other shapes | Region, disk, and network dependent; use the official calculator | Technically possible, but don't pick a machine or estimate a final bill until region and disk are selected. |
+
+Official provider links:
+- DigitalOcean Droplet pricing: https://www.digitalocean.com/pricing/droplets
+- DigitalOcean pricing documentation: https://docs.digitalocean.com/products/droplets/details/pricing/
+- GitHub larger-runner size table: https://docs.github.com/en/actions/reference/runners/larger-runners
+- GitHub Actions runner pricing: https://github.com/github/docs/blob/main/content/billing/reference/actions-runner-pricing.md
+- Google Cloud machine families: https://docs.cloud.google.com/compute/docs/general-purpose-machines
+- Google Cloud pricing calculator/overview: https://cloud.google.com/products/compute
+
+Important: cloud build machines are paid resources. No instance has been launched and no billing-enabled account has been accessed. On DigitalOcean's published CPU-Optimized plan, the compute line item would be roughly $2 for four billed hours or $5 for ten billed hours at the listed $0.50/hour, but Chromium checkout/build duration is not yet known; do not treat these as total build-cost guarantees. Stop/destroy an ephemeral instance when finished and check for separately retained volumes, snapshots, or other billable resources.
+
 ## Recommended implementation sequence
 
 1. Identify a Linux x86-64 build host with 100+ GB free disk and 16+ GB RAM (or a suitable self-hosted machine).
@@ -67,11 +88,13 @@ This note tracks realistic engine and build-resource options for moving MVM Brow
 
 - The current MVM Browser Android APK and Release APK CI workflows passed for commit fe9b9b3.
 - The current application still uses Android System WebView.
-- The Chromium build script is present but has not been executed here.
+- The Chromium build script is present but has not been executed here. It now checks minimum RAM/disk before checkout and uses fetch --nohooks so dependencies are installed before Chromium hooks run.
 - No Chromium APK, benchmark, device test, or cloud-host availability is claimed by this research note.
 
 ## Follow-up checklist
 
+- [ ] Select a host: DigitalOcean CPU-Optimized 16-vCPU/32-GiB/200-GiB is the current cost-focused candidate; GitHub larger runners are an alternative if the account supports them.
+- [ ] Confirm the exact region, hourly rate, disk capacity, budget limit, and cleanup plan before creating any paid resource.
 - [ ] Confirm an eligible Linux build host and exact free disk/RAM.
 - [ ] Review the current build script against upstream instructions immediately before running it.
 - [ ] Complete the first upstream Chromium build.
