@@ -39,18 +39,47 @@ def text_of(parent: ET.Element, path: str) -> str:
     return (element.text or "").strip() if element is not None else ""
 
 
+def element_local_text(parent: ET.Element, name: str) -> str:
+    element = next(
+        (child for child in list(parent) if child.tag.rsplit("}", 1)[-1] == name),
+        None,
+    )
+    if element is None:
+        return ""
+    return " ".join(part.strip() for part in element.itertext() if part.strip()).strip()
+
+
 def latest_android_stable_release() -> dict[str, str] | None:
     root = ET.fromstring(fetch_bytes(CHROME_RSS))
-    channel = root.find("./channel")
-    if channel is None:
-        raise ValueError("Chrome Releases RSS did not contain a channel element.")
+    root_name = root.tag.rsplit("}", 1)[-1].casefold()
+    entries: list[tuple[str, ET.Element, str]] = []
 
-    for item in channel.findall("item"):
-        title = text_of(item, "title")
+    if root_name == "feed":
+        # Blogger may serve Atom XML even when the URL requests alt=rss.
+        for entry in list(root):
+            if entry.tag.rsplit("}", 1)[-1] == "entry":
+                entries.append(("atom", entry, ""))
+    elif root_name == "rss":
+        channel = root.find("./channel")
+        if channel is None:
+            raise ValueError("Chrome Releases RSS did not contain a channel element.")
+        for item in channel.findall("item"):
+            entries.append(("rss", item, ""))
+    else:
+        raise ValueError(f"Unexpected Chrome Releases feed root: {root.tag!r}")
+
+    for feed_type, item, _unused in entries:
+        title = element_local_text(item, "title")
+        # Exact matching deliberately excludes Beta and Dev posts.
         if title.casefold() != "chrome for android update":
             continue
 
-        description = html.unescape(text_of(item, "description"))
+        description = element_local_text(item, "description")
+        if not description:
+            description = element_local_text(item, "content")
+        if not description:
+            description = element_local_text(item, "summary")
+        description = html.unescape(description)
         description = re.sub(r"<[^>]+>", " ", description)
         description = re.sub(r"\s+", " ", description).strip()
         match = re.search(
@@ -59,22 +88,40 @@ def latest_android_stable_release() -> dict[str, str] | None:
             flags=re.IGNORECASE,
         )
         if not match:
-            # The release page can change phrasing; still retain the source link/date.
+            # Keep source metadata even if Google changes the release-note wording.
             version = "version not parsed"
             major = ""
         else:
             major, version = match.group(1), match.group(2)
 
+        date = element_local_text(item, "pubDate") or element_local_text(item, "published")
+        if not date:
+            date = element_local_text(item, "updated")
+
+        url = element_local_text(item, "link")
+        if feed_type == "atom":
+            link_element = next(
+                (
+                    child
+                    for child in list(item)
+                    if child.tag.rsplit("}", 1)[-1] == "link"
+                    and child.attrib.get("rel", "alternate") == "alternate"
+                    and child.attrib.get("href")
+                ),
+                None,
+            )
+            if link_element is not None:
+                url = link_element.attrib["href"]
+
         return {
             "title": title,
             "version": version,
             "major": major,
-            "date": text_of(item, "pubDate"),
-            "url": text_of(item, "link"),
+            "date": date,
+            "url": url,
             "description": description[:500],
         }
     return None
-
 
 def github_json(url: str) -> Any:
     raw = fetch_bytes(
