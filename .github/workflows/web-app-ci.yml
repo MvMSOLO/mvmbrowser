@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -34,21 +34,6 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - name: Reconcile existing npm lockfile
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Commit reconciled lockfile for this feature branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/product-readiness-profile-auth'
-        shell: bash
-        run: |
-          if git diff --quiet -- package-lock.json; then
-            echo 'package-lock.json is already synchronized.'
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package-lock.json
-          git commit -m 'build: synchronize npm dependency lockfile'
-          git push origin HEAD:feat/product-readiness-profile-auth
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
       - name: Typecheck
@@ -59,11 +44,3 @@ jobs:
         run: npm run lint
       - name: Production build and migrations
         run: npm run build
-      - name: Export reconciled lockfile for review
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: reconciled-package-lock
-          path: package-lock.json
-          if-no-files-found: error
-          retention-days: 3
