@@ -37,6 +37,7 @@ jobs:
           grep -Fq '/sys/fs/cgroup/memory.max' scripts/check-chromium-build-host.sh
           grep -Fq 'chrome_public_apk' scripts/build-chromium-android.sh
           grep -Fq 'APK_SHA256=' scripts/build-chromium-android.sh
+          grep -Fq 'depot_tools revision:' scripts/build-chromium-android.sh
           grep -Fq 'install-build-deps.sh --no-prompt' scripts/build-chromium-android.sh
           grep -Fq 'sudo -n true' scripts/build-chromium-android.sh
           grep -Fq 'exists but is not a depot_tools' scripts/build-chromium-android.sh
