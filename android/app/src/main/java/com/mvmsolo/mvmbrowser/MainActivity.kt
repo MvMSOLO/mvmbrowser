@@ -184,6 +184,8 @@ class MainActivity : Activity() {
             userAgentString = userAgentString
         }
         CookieManager.getInstance().setAcceptCookie(true)
+        // Expose the native bridge only while the bundled MVM home screen is active.
+        web.addJavascriptInterface(BrowserBridge(), "BrowserBridge")
         web.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
@@ -198,6 +200,11 @@ class MainActivity : Activity() {
                 return true
             }
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
+                if (url.startsWith("file:///android_asset/home.html")) {
+                    view.addJavascriptInterface(BrowserBridge(), "BrowserBridge")
+                } else {
+                    view.removeJavascriptInterface("BrowserBridge")
+                }
                 progress.visibility = View.VISIBLE
                 progress.progress = 4
                 address.setText(if (url.startsWith("file:///android_asset/home.html")) "" else url)
@@ -431,7 +438,6 @@ class MainActivity : Activity() {
                         if (parsed.path.orEmpty().startsWith("/l/")) {
                             resultUrl = parsed.getQueryParameter("uddg") ?: resultUrl
                         }
-                        resultUrl = runCatching { java.net.URLDecoder.decode(resultUrl, "UTF-8") }.getOrDefault(resultUrl)
                         if (resultUrl.startsWith("http://") || resultUrl.startsWith("https://")) {
                             val item = JSONObject()
                             item.put("url", resultUrl)
