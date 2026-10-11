@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/build-chromium-android.sh'
+      - 'scripts/read-chromium-version.sh'
       - 'scripts/check-chromium-build-host.sh'
       - 'scripts/check-chromium-source-clean.sh'
       - 'scripts/verify-chromium-apk.sh'
@@ -18,6 +19,7 @@ on:
   pull_request:
     paths:
       - 'scripts/build-chromium-android.sh'
+      - 'scripts/read-chromium-version.sh'
       - 'scripts/check-chromium-build-host.sh'
       - 'scripts/check-chromium-source-clean.sh'
       - 'scripts/verify-chromium-apk.sh'
@@ -43,6 +45,7 @@ jobs:
       - name: Validate Bash syntax
         run: |
           bash -n scripts/build-chromium-android.sh
+          bash -n scripts/read-chromium-version.sh
           bash -n scripts/check-chromium-build-host.sh
           bash -n scripts/check-chromium-source-clean.sh
           bash -n scripts/verify-chromium-apk.sh
@@ -51,6 +54,43 @@ jobs:
         run: |
           python3 -m py_compile scripts/report-chromium-upstream-status.py
           python3 -m unittest discover -s tests -p 'test_chromium_upstream_status.py' -v
+
+      - name: Test Chromium version parser
+        shell: bash
+        run: |
+          test_root="$RUNNER_TEMP/chromium-version-test"
+          mkdir -p "$test_root"
+          valid_file="$test_root/VERSION-valid"
+          cat > "$valid_file" <<'VERSION'
+          MAJOR= 155
+          MINOR= 0
+          BUILD= 8059
+          PATCH= 39
+          VERSION
+
+          parsed="$(bash scripts/read-chromium-version.sh "$valid_file")"
+          [[ "$parsed" == "155.0.8059.39" ]] || {
+            echo "Unexpected Chromium version parse result: $parsed" >&2
+            exit 1
+          }
+
+          invalid_file="$test_root/VERSION-invalid"
+          cat > "$invalid_file" <<'VERSION'
+          MAJOR= 155
+          MINOR= 0
+          BUILD= not-a-number
+          VERSION
+          if bash scripts/read-chromium-version.sh "$invalid_file" > version-invalid.txt 2>&1; then
+            echo "Expected missing/non-numeric version fields to be rejected." >&2
+            exit 1
+          fi
+          grep -Fq 'numeric MAJOR, MINOR, BUILD and PATCH fields' version-invalid.txt
+
+          if bash scripts/read-chromium-version.sh "$test_root/not-found" > version-missing.txt 2>&1; then
+            echo "Expected a missing VERSION file to be rejected." >&2
+            exit 1
+          fi
+          grep -Fq 'missing or unreadable' version-missing.txt
       - name: Verify build guardrails
         run: |
           grep -Fq 'fetch --nohooks --no-history android' scripts/build-chromium-android.sh
@@ -69,6 +109,8 @@ jobs:
           grep -Fq 'Commit, stash, or remove local source changes before building.' scripts/check-chromium-source-clean.sh
           grep -Fq 'chromium_source_tree_clean=true' scripts/build-chromium-android.sh
           grep -Fq 'VERSION_FILE="$SRC_DIR/chrome/VERSION"' scripts/build-chromium-android.sh
+          grep -Fq 'read-chromium-version.sh' scripts/build-chromium-android.sh
+          grep -Fq 'MAJOR, MINOR, BUILD and PATCH fields' scripts/read-chromium-version.sh
           grep -Fq 'chromium_version=$CHROMIUM_VERSION' scripts/build-chromium-android.sh
           grep -Fq 'MAJOR.MINOR.BUILD.PATCH' scripts/verify-chromium-apk.sh
           grep -Fq 'FETCH_HEAD^{commit}' scripts/build-chromium-android.sh
