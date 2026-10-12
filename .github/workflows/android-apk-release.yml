@@ -48,11 +48,13 @@ jobs:
         run: |
           set -euo pipefail
           APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          RELEASE_APK="MVM-Browser.apk"
+          CHECKSUM_FILE="MVM-Browser.apk.sha256"
           test -s "$APK"
           unzip -t "$APK" >/dev/null
-          cp "$APK" "MVM-Browser.apk"
-          sha256sum "MVM-Browser.apk" | tee "MVM-Browser.apk.sha256"
-          ls -lh "MVM-Browser.apk" "MVM-Browser.apk.sha256"
+          cp "$APK" "$RELEASE_APK"
+          sha256sum "$RELEASE_APK" | tee "$CHECKSUM_FILE"
+          ls -lh "$RELEASE_APK" "$CHECKSUM_FILE"
 
       - name: Publish debug APK and checksum as GitHub Release assets
         env:
@@ -63,7 +65,9 @@ jobs:
         run: |
           set -euo pipefail
           TAG="mvm-browser-build-${RUN_NUMBER}"
-          gh release create "$TAG" "MVM-Browser.apk" "MVM-Browser.apk.sha256" \
+          RELEASE_APK="MVM-Browser.apk"
+          CHECKSUM_FILE="MVM-Browser.apk.sha256"
+          gh release create "$TAG" "$RELEASE_APK" "$CHECKSUM_FILE" \
             --repo "$REPOSITORY" \
             --title "MVM Browser debug APK build ${RUN_NUMBER}" \
             --notes "Automated debug build from commit ${GITHUB_SHA}. Android unit tests passed before packaging. This installable APK uses the Android debug signing key and the debug application ID com.mvmsolo.mvmbrowser.debug; it is for testing, not a production/Play Store release. SHA-256 is provided in MVM-Browser.apk.sha256. The current browser engine is Android System WebView; bundled Cromite/Chromium integration is not included in this APK."
