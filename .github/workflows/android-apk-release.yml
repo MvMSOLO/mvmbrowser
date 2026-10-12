@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   release:
-    name: Build and publish installable APK
+    name: Test, build, and publish installable debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -35,33 +35,35 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Build APK
+      - name: Run Android unit tests
+        working-directory: android
+        run: gradle --no-daemon --stacktrace testDebugUnitTest
+
+      - name: Build installable debug APK
         working-directory: android
         run: gradle --no-daemon --stacktrace assembleDebug
 
-      - name: Verify APK
+      - name: Verify APK and prepare checksum
         shell: bash
         run: |
+          set -euo pipefail
           APK="android/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
-          sha256sum "$APK"
-          ls -lh "$APK"
+          unzip -t "$APK" >/dev/null
+          cp "$APK" "MVM-Browser.apk"
+          sha256sum "MVM-Browser.apk" | tee "MVM-Browser.apk.sha256"
+          ls -lh "MVM-Browser.apk" "MVM-Browser.apk.sha256"
 
-      - name: Publish APK as GitHub Release asset
+      - name: Publish debug APK and checksum as GitHub Release assets
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           RUN_NUMBER: ${{ github.run_number }}
-          APK_PATH: android/app/build/outputs/apk/debug/app-debug.apk
         shell: bash
         run: |
+          set -euo pipefail
           TAG="mvm-browser-build-${RUN_NUMBER}"
-          RELEASE_APK="MVM-Browser.apk"
-          cp "$APK_PATH" "$RELEASE_APK"
-          test -s "$RELEASE_APK"
-          echo "Release asset name: $RELEASE_APK"
-          sha256sum "$RELEASE_APK"
-          gh release create "$TAG" "$RELEASE_APK" \
+          gh release create "$TAG" "MVM-Browser.apk" "MVM-Browser.apk.sha256" \
             --repo "$REPOSITORY" \
-            --title "MVM Browser APK build ${RUN_NUMBER}" \
-            --notes "Automatically built from commit ${GITHUB_SHA}. This release contains the current MVM Browser Android APK as MVM-Browser.apk. The current browser rendering engine is Android System WebView; bundled Chromium integration is still in progress."
+            --title "MVM Browser debug APK build ${RUN_NUMBER}" \
+            --notes "Automated debug build from commit ${GITHUB_SHA}. Android unit tests passed before packaging. This installable APK uses the Android debug signing key and the debug application ID com.mvmsolo.mvmbrowser.debug; it is for testing, not a production/Play Store release. SHA-256 is provided in MVM-Browser.apk.sha256. The current browser engine is Android System WebView; bundled Cromite/Chromium integration is not included in this APK."
