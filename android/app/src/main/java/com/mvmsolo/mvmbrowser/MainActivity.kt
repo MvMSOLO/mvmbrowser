@@ -77,7 +77,50 @@ class MainActivity : Activity() {
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
         adBlockingEnabled = prefs.getBoolean("ad_blocking_enabled", true)
         buildUi()
-        newTab()
+        restoreTabs()
+    }
+
+    /**
+     * Restore only ordinary HTTP(S) pages and the bundled home screen.
+     * Never restore arbitrary file/content/javascript URLs from preferences.
+     */
+    private fun restoreTabs() {
+        val restored = runCatching {
+            val saved = JSONArray(prefs.getString("open_tabs", "[]") ?: "[]")
+            (0 until minOf(saved.length(), 8)).mapNotNull { index ->
+                val raw = saved.optString(index).take(4096)
+                when {
+                    isBundledHomeUrl(raw) -> HOME_ASSET_URL
+                    runCatching { Uri.parse(raw) }.getOrNull()?.let {
+                        (it.scheme == "https" || it.scheme == "http") && !it.host.isNullOrBlank()
+                    } == true -> raw
+                    else -> null
+                }
+            }
+        }.getOrDefault(emptyList())
+
+        if (restored.isEmpty()) {
+            newTab()
+            return
+        }
+        restored.forEach { url -> newTab(url) }
+        activate((restored.size - 1).coerceAtLeast(0))
+    }
+
+    private fun saveOpenTabs() {
+        val urls = JSONArray()
+        tabs.takeLast(8).forEach { tab ->
+            val current = tab.web.url ?: tab.url
+            val safeUrl = when {
+                isBundledHomeUrl(current) -> HOME_ASSET_URL
+                runCatching { Uri.parse(current) }.getOrNull()?.let {
+                    (it.scheme == "https" || it.scheme == "http") && !it.host.isNullOrBlank()
+                } == true -> current.take(4096)
+                else -> null
+            }
+            if (safeUrl != null) urls.put(safeUrl)
+        }
+        prefs.edit().putString("open_tabs", urls.toString()).apply()
     }
 
     private fun buildUi() {
@@ -872,6 +915,7 @@ class MainActivity : Activity() {
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 
     override fun onPause() {
+        saveOpenTabs()
         super.onPause()
         active()?.let { tab ->
             if (tab.url.startsWith("http://") || tab.url.startsWith("https://")) {
