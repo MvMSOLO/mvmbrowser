@@ -8,14 +8,14 @@ function bytesToB64(bytes: Uint8Array): string {
   return btoa(bin);
 }
 
-function b64ToBytes(value: string): Uint8Array {
+function b64ToBytes(value: string): Uint8Array<ArrayBuffer> {
   const bin = atob(value);
-  const out = new Uint8Array(bin.length);
+  const out = new Uint8Array(new ArrayBuffer(bin.length));
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
 }
 
-async function derive(pin: string, salt: Uint8Array): Promise<CryptoKey> {
+async function derive(pin: string, salt: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveKey"]);
   return crypto.subtle.deriveKey(
     { name: "PBKDF2", salt, iterations: 80_000, hash: "SHA-256" },

@@ -10,6 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAmoRouteImport } from './routes/api/amo'
 import { Route as ApiBrowseRouteImport } from './routes/api/browse'
 import { Route as ApiFiltersRouteImport } from './routes/api/filters'
@@ -21,6 +24,21 @@ import { Route as ApiSuggestRouteImport } from './routes/api/suggest'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAmoRoute = ApiAmoRouteImport.update({
@@ -61,6 +79,9 @@ const ApiSuggestRoute = ApiSuggestRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/amo': typeof ApiAmoRoute
   '/api/browse': typeof ApiBrowseRoute
   '/api/filters': typeof ApiFiltersRoute
@@ -71,6 +92,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/amo': typeof ApiAmoRoute
   '/api/browse': typeof ApiBrowseRoute
   '/api/filters': typeof ApiFiltersRoute
@@ -82,6 +106,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/amo': typeof ApiAmoRoute
   '/api/browse': typeof ApiBrowseRoute
   '/api/filters': typeof ApiFiltersRoute
@@ -94,6 +121,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
+    | '/profile'
+    | '/api/auth/$'
+    | '/login'
+    | '/profile'
+    | '/api/auth/$'
     | '/api/amo'
     | '/api/browse'
     | '/api/filters'
@@ -104,6 +137,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
+    | '/profile'
+    | '/api/auth/$'
     | '/api/amo'
     | '/api/browse'
     | '/api/filters'
@@ -125,6 +161,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  ProfileRoute: typeof ProfileRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAmoRoute: typeof ApiAmoRoute
   ApiBrowseRoute: typeof ApiBrowseRoute
   ApiFiltersRoute: typeof ApiFiltersRoute
@@ -141,6 +180,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/amo': {
@@ -197,6 +257,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  ProfileRoute: ProfileRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAmoRoute: ApiAmoRoute,
   ApiBrowseRoute: ApiBrowseRoute,
   ApiFiltersRoute: ApiFiltersRoute,
