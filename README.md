@@ -16,6 +16,7 @@ If that link is not available yet, open [Releases](https://github.com/MvMSOLO/mv
 
 - Android APK builds on GitHub Actions.
 - Browser UI includes tab navigation and basic browser controls.
+- Up to eight open HTTP(S) tabs are restored after app restart; unsafe schemes and arbitrary local-file URLs are not restored.
 - Download handling is implemented through Android DownloadManager.
 - **Engine status:** the current app still uses Android System WebView. A bundled standalone Chromium engine is a separate ongoing migration and is not yet included in the APK.
 
