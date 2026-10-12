@@ -447,6 +447,7 @@ class MainActivity : Activity() {
         options.add("◷  History")
         options.add("♧  Clear browsing data")
         options.add("♙  Profile & Memory")
+        options.add("◉  Sign in / Account")
         AlertDialog.Builder(this).setTitle("Tabs & library").setItems(options.toTypedArray()) { _, which ->
             when {
                 which < tabs.size -> activate(which)
@@ -455,7 +456,8 @@ class MainActivity : Activity() {
                 which == tabs.size + 2 -> showSavedList("offline-pages", "Offline pages", true)
                 which == tabs.size + 3 -> showHistory()
                 which == tabs.size + 4 -> showClearDataDialog()
-                else -> showProfileMemoryDialog()
+                which == tabs.size + 5 -> showProfileMemoryDialog()
+                else -> showAccountDialog()
             }
         }.setNegativeButton("Close current tab") { _, _ -> closeActiveTab() }
             .setNeutralButton("Clear history") { _, _ -> prefs.edit().remove("history").apply(); toast("History cleared") }
@@ -543,6 +545,148 @@ class MainActivity : Activity() {
             }
             .setNegativeButton("Close", null)
             .show()
+    }
+
+    /**
+     * Native account UI backed by this repository's Better Auth HTTP API.
+     * The deployment origin is configurable because this repository has no
+     * production domain. Passwords are not persisted in preferences.
+     */
+    private fun showAccountDialog() {
+        val form = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(4), dp(20), 0)
+        }
+        fun authField(hintText: String, value: String = "", kind: Int = android.text.InputType.TYPE_CLASS_TEXT): EditText {
+            return EditText(this).apply {
+                hint = hintText
+                setTextColor(textColor)
+                setHintTextColor(muted)
+                inputType = kind
+                setSingleLine(true)
+                setText(value)
+            }
+        }
+
+        val serverField = authField("HTTPS origin of deployed MVM auth app", prefs.getString("auth_base_url", "") ?: "")
+        val nameField = authField("Display name (for account creation)", prefs.getString("profile_name", "") ?: "")
+        val emailField = authField("Email address", prefs.getString("profile_email", "") ?: "",
+            android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
+        val passwordField = authField("Password (never saved)", "",
+            android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD)
+        val status = label(
+            "Use only your own deployed MVM HTTPS auth server with /api/auth/*. No production server URL is configured in this build.",
+            12f, muted, false
+        ).apply {
+            setLineSpacing(dp(2).toFloat(), 1f)
+            setPadding(0, dp(8), 0, dp(10))
+        }
+        val signOutButton = action("SIGN OUT") { }.apply { textSize = 11f }
+        form.addView(label("ACCOUNT · BETTER AUTH", 11f, cyan, true).apply { setPadding(0, dp(3), 0, dp(8)) })
+        form.addView(serverField, LinearLayout.LayoutParams(-1, dp(52)))
+        form.addView(nameField, LinearLayout.LayoutParams(-1, dp(52)))
+        form.addView(emailField, LinearLayout.LayoutParams(-1, dp(52)))
+        form.addView(passwordField, LinearLayout.LayoutParams(-1, dp(52)))
+        form.addView(status, LinearLayout.LayoutParams(-1, -2))
+        form.addView(signOutButton, LinearLayout.LayoutParams(-1, dp(44)))
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Sign in / Create account")
+            .setView(form)
+            .setPositiveButton("Sign in", null)
+            .setNeutralButton("Create account", null)
+            .setNegativeButton("Close", null)
+            .create()
+        dialog.show()
+
+        fun showResult(result: NativeAuthClient.AuthResult) {
+            status.text = result.message.take(350)
+            status.setTextColor(if (result.ok) cyan else 0xFFFF8C9E.toInt())
+            if (result.signedIn && result.user != null) {
+                val user = result.user
+                prefs.edit()
+                    .putString("profile_name", user.name.ifBlank { nameField.text.toString().trim() }.take(80))
+                    .putString("profile_email", user.email.ifBlank { emailField.text.toString().trim() }.take(254))
+                    .apply()
+                nameField.setText(user.name)
+                emailField.setText(user.email)
+                passwordField.text.clear()
+            }
+        }
+
+        fun runAuth(createAccount: Boolean) {
+            val origin = NativeAuthClient.normalizeBaseUrl(serverField.text.toString())
+            if (origin == null) {
+                status.text = "Enter a valid HTTPS origin only. Do not enter a path, credentials, or query string."
+                status.setTextColor(0xFFFF8C9E.toInt())
+                return
+            }
+            val emailValue = emailField.text.toString().trim()
+            val passwordValue = passwordField.text.toString()
+            val nameValue = nameField.text.toString().trim()
+            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(emailValue).matches()) {
+                status.text = "Enter a valid email address."
+                status.setTextColor(0xFFFF8C9E.toInt())
+                return
+            }
+            if (passwordValue.length < 8 || passwordValue.length > 128) {
+                status.text = "Password must contain 8–128 characters."
+                status.setTextColor(0xFFFF8C9E.toInt())
+                return
+            }
+            if (createAccount && nameValue.length !in 2..80) {
+                status.text = "Display name must contain 2–80 characters."
+                status.setTextColor(0xFFFF8C9E.toInt())
+                return
+            }
+            prefs.edit().putString("auth_base_url", origin).apply()
+            val loginButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            val createButton = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+            loginButton.isEnabled = false
+            createButton.isEnabled = false
+            status.text = if (createAccount) "Creating account securely…" else "Signing in securely…"
+            status.setTextColor(muted)
+            Thread {
+                val result = if (createAccount) {
+                    NativeAuthClient.signUp(origin, nameValue, emailValue, passwordValue)
+                } else {
+                    NativeAuthClient.signIn(origin, emailValue, passwordValue)
+                }
+                runOnUiThread {
+                    loginButton.isEnabled = true
+                    createButton.isEnabled = true
+                    showResult(result)
+                }
+            }.start()
+        }
+
+        signOutButton.setOnClickListener {
+            val origin = NativeAuthClient.normalizeBaseUrl(serverField.text.toString())
+            if (origin == null) {
+                status.text = "Enter the same HTTPS auth server used to sign in."
+                status.setTextColor(0xFFFF8C9E.toInt())
+                return@setOnClickListener
+            }
+            signOutButton.isEnabled = false
+            status.text = "Signing out…"
+            Thread {
+                val result = NativeAuthClient.signOut(origin)
+                runOnUiThread {
+                    signOutButton.isEnabled = true
+                    showResult(result)
+                }
+            }.start()
+        }
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { runAuth(false) }
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { runAuth(true) }
+        val initialOrigin = NativeAuthClient.normalizeBaseUrl(serverField.text.toString())
+        if (initialOrigin != null) {
+            status.text = "Checking account session…"
+            Thread {
+                val result = NativeAuthClient.getSession(initialOrigin)
+                runOnUiThread { showResult(result) }
+            }.start()
+        }
     }
 
     private fun showSavedList(key: String, title: String, offline: Boolean) {

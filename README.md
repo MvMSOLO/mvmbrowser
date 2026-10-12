@@ -49,6 +49,14 @@ Supporting research and tooling:
 
 The bootstrap CI tests script syntax, release/version parsers, `.gclient` Android configuration, source-cleanliness checks, resource/config guards, synthetic APK metadata/signature checks, and a mocked Android-device preflight. It does not compile Chromium or Cromite. The upstream watch is a version signal—not a security audit.
 
+## Native APK account login
+
+The Android APK includes a native email/password sign-in and account-creation screen backed by Better Auth endpoints (`/api/auth/sign-in/email`, `/api/auth/sign-up/email`, `/api/auth/get-session`, and `/api/auth/sign-out`). Open **Tabs & library → Sign in / Account** and enter the HTTPS origin of the deployed MVM web app that serves these endpoints. Passwords are not saved by the APK; the session cookie is managed by Android's WebView cookie store.
+
+**A live auth deployment is still required.** This repository does not contain a configured production domain or production secrets. The deployment must enable Better Auth, serve `/api/auth/*`, use a persistent database, configure its HTTPS base URL/secret and trusted origin, and have email/password sign-up enabled. A URL is not inferred or hard-coded; validate sign-in, sign-up, session persistence after app restart, and sign-out against the real deployment before calling the product release-ready.
+
+Native profile notes remain device-local and are not AI memory or cross-device sync.
+
 ## Build locally
 
 Requirements: JDK 17 and Gradle 8.9.
