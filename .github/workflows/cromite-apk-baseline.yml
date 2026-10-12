@@ -1,0 +1,73 @@
+name: Cromite ARM64 APK Baseline
+
+on:
+  push:
+    branches: [adopt-cromite-source-fork]
+    paths:
+      - ".github/workflows/cromite-apk-baseline.yml"
+      - "docs/CROMITE_APK_BASELINE.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-verify-apk:
+    name: Fetch and inspect upstream ARM64 APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download pinned upstream Cromite release APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p verified-apk
+          url='https://github.com/uazo/cromite/releases/download/v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a/arm64_ChromePublic.apk'
+          expected='9db12af1af021f42b4371e76d0e9fe476a7085bbbbc76bc410a538d028bf6071'
+          curl --fail --show-error --location --retry 3 --retry-delay 2 --max-time 600 "$url" -o verified-apk/arm64_ChromePublic.apk
+          actual="$(sha256sum verified-apk/arm64_ChromePublic.apk | awk '{print $1}')"
+          printf 'expected=%s\nactual=%s\n' "$expected" "$actual"
+          test "$actual" = "$expected"
+          printf '%s  %s\n' "$expected" 'arm64_ChromePublic.apk' > verified-apk/SHA256SUMS
+          cat > verified-apk/BASELINE.txt <<'EOF'
+          Upstream project: https://github.com/uazo/cromite
+          Release: v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a
+          Asset: arm64_ChromePublic.apk
+          SHA-256: 9db12af1af021f42b4371e76d0e9fe476a7085bbbbc76bc410a538d028bf6071
+          This is an upstream artifact, not an MVM-branded build.
+          EOF
+      - name: Inspect and assert APK package metadata and signing certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk='verified-apk/arm64_ChromePublic.apk'
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          aapt_bin="$(find "$sdk_root/build-tools" -type f -name aapt 2>/dev/null | sort -V | tail -n 1 || true)"
+          apksigner_bin="$(find "$sdk_root/build-tools" -type f -name apksigner 2>/dev/null | sort -V | tail -n 1 || true)"
+          if [[ -z "$aapt_bin" || -z "$apksigner_bin" ]]; then
+            echo 'Android SDK build-tools (aapt and apksigner) not found on runner.' >&2
+            exit 1
+          fi
+          "$aapt_bin" dump badging "$apk" > verified-apk/package-metadata.txt
+          grep -Fq "package: name='org.cromite.cromite' versionCode='801003702' versionName='153.0.8010.37'" verified-apk/package-metadata.txt
+          grep -Fq "sdkVersion:'29'" verified-apk/package-metadata.txt
+          grep -Fq "targetSdkVersion:'36'" verified-apk/package-metadata.txt
+          grep -Fq "native-code: 'arm64-v8a'" verified-apk/package-metadata.txt
+          grep -E '^(package:|sdkVersion:|targetSdkVersion:|native-code:)' verified-apk/package-metadata.txt
+          "$apksigner_bin" verify --verbose --print-certs "$apk" 2>&1 | tee verified-apk/signature-metadata.txt
+          grep -Fq 'Verifies' verified-apk/signature-metadata.txt
+          grep -Fq 'V2 Signer: certificate DN: CN=CromiteOrg' verified-apk/signature-metadata.txt
+          grep -Fq 'V2 Signer: certificate SHA-256 digest: 633fa41d8211d6d0916a819b89668c6de92e64232da67f9d16fd81c3b7e923ff' verified-apk/signature-metadata.txt
+          {
+            echo '### APK baseline verification passed'
+            echo '- SHA-256, package ID/version, min/target SDK, ARM64 ABI and signing certificate match the pinned baseline.'
+            echo '- This is upstream Cromite, not an MVM Browser build.'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload verified APK and inspection metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: cromite-arm64-upstream-baseline
+          path: verified-apk/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0

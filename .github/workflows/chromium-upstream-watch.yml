@@ -6,6 +6,10 @@ on:
     paths:
       - "scripts/report-chromium-upstream-status.py"
       - ".github/workflows/chromium-upstream-watch.yml"
+  pull_request:
+    paths:
+      - "scripts/report-chromium-upstream-status.py"
+      - ".github/workflows/chromium-upstream-watch.yml"
   schedule:
     - cron: "30 8 * * 1"
   workflow_dispatch:
@@ -15,13 +19,54 @@ permissions:
 
 jobs:
   report:
-    name: Check public Chromium release signals
+    name: Check public Chromium and Cromite release signals
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Generate read-only status report
+      - name: Check latest Cromite build-image tag without pulling it
+        id: cromite-image
+        shell: bash
+        run: |
+          set -uo pipefail
+          release_json="$RUNNER_TEMP/cromite-latest-release.json"
+          if ! curl --fail --silent --show-error --location --retry 2 --max-time 20 \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'User-Agent: MVM-Browser-Cromite-Image-Watch' \
+            https://api.github.com/repos/uazo/cromite/releases/latest -o "$release_json"; then
+            echo '::warning::Could not query the latest Cromite release metadata.'
+            echo 'Cromite image status: UNKNOWN (release metadata unavailable).' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          image="$(python3 - "$release_json" <<'PY'
+          import json, re, sys
+          with open(sys.argv[1], encoding='utf-8') as f:
+              release = json.load(f)
+          tag = str(release.get('tag_name', ''))
+          match = re.fullmatch(r'v?(\d+\.\d+\.\d+\.\d+)-([0-9a-f]{40})', tag)
+          if not match:
+              print(f'ERROR: unexpected Cromite release tag format: {tag}', file=sys.stderr)
+              raise SystemExit(2)
+          print(f'uazo/cromite-build:{match.group(1)}-{match.group(2)}')
+          PY
+          )" || {
+            echo '::warning::Latest Cromite release tag could not be parsed; image availability is unknown.'
+            echo 'Cromite image status: UNKNOWN (release tag could not be parsed).' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
+          echo "Checking registry manifest only: $image"
+          if docker manifest inspect "$image" >/dev/null 2>&1; then
+            echo "Cromite build image: AVAILABLE ($image)" >> "$GITHUB_STEP_SUMMARY"
+            echo "Cromite build image manifest is available: $image"
+          else
+            echo "::warning::The build image for the latest Cromite release is not available or could not be verified: $image"
+            {
+              echo '### Cromite build image status: BLOCKED/UNKNOWN'
+              echo "The latest release image manifest could not be verified: \`$image\`. No image was pulled and no compilation was started. Recheck the upstream image reference before running the local build script."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Generate read-only upstream status report
         id: report
         run: python3 scripts/report-chromium-upstream-status.py --output chromium-upstream-status.md --strict
       - name: Save report artifact

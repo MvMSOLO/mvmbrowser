@@ -1,0 +1,70 @@
+# Cromite baseline audit — 2026-10-11
+
+## Result
+
+**Cromite is selected as the prototype/source-fork candidate, but its currently published Android release is not approved as a release-ready security base.**
+
+- Upstream: https://github.com/uazo/cromite
+- Build guide: https://github.com/uazo/cromite/blob/master/docs/HOW_TO_BUILD.md
+- Latest release inspected: [v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a](https://github.com/uazo/cromite/releases/tag/v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a)
+- Published: 2026-09-15
+- ARM64 APK: [arm64_ChromePublic.apk](https://github.com/uazo/cromite/releases/download/v153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a/arm64_ChromePublic.apk)
+- Published APK size: 323,809,949 bytes
+- Published SHA-256: `9db12af1af021f42b4371e76d0e9fe476a7085bbbbc76bc410a538d028bf6071`
+- Official release notes reported Chrome Stable 155.0.8059.39 on 2026-10-06; Chrome for Android 156.0.8078.25 was then in an Early Stable rollout to a small percentage of users on 2026-10-07: https://chromereleases.googleblog.com/
+- The automated freshness gate conservatively compares Cromite against the highest version in the official Chrome Android Stable/Early Stable release feed. The published Cromite v153 release is behind both of these baselines. This version comparison is a warning gate, not a complete CVE audit.
+
+## Alternative-source recheck — 2026-10-12
+
+The latest-releases API still points to the official uazo/Cromite `v153.0.8010.37` release from 2026-09-15. Chrome Android Stable is `155.0.8059.39` as of 2026-10-06, so the freshness gate remains blocked. This does not substitute for a vulnerability-by-vulnerability audit.
+
+Two other public Cromite forks were checked rather than assumed to be fresher:
+
+- [qwez-dev/cromite](https://github.com/qwez-dev/cromite): default branch `master`; repository last pushed 2026-08-24; `build/RELEASE` reports `148.0.7778.168`; no published GitHub release was returned. Its stated aim to track stable is not evidence that its checked-in baseline is current.
+- [Etherdrake/cromite](https://github.com/Etherdrake/cromite): default branch `master`; repository last pushed 2025-02-13; `build/RELEASE` reports `133.0.6943.60`; no published GitHub release was returned.
+
+Decision: neither fork is a fresher replacement for official Cromite v153. Keep the version gate closed; do not switch to a lower-version fork or treat an unpublished branch as a verified security-current release. Vanilla upstream Chromium remains the fallback if Cromite cannot meet the version/security gate and a suitable build host becomes available.
+
+## Build-image availability status (checked 2026-10-11)
+
+GitHub Actions run [#38139634564](https://github.com/MvMSOLO/mvmbrowser/actions/runs/38139634564) executed `docker manifest inspect` for `uazo/cromite-build:153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a`. The registry manifest could not be verified; the workflow emitted a warning and did not pull the image or compile anything. Treat the result as **unverified/blocked**, not as conclusive evidence that the tag is absent.
+
+The public [Cromite build-image tag page](https://hub.docker.com/r/uazo/cromite-build) surfaces an older recent image tag, while the latest GitHub release and `build/RELEASE` still report 153.0.8010.37. A distinct [uazo/chromium](https://hub.docker.com/r/uazo/chromium/tags) tag for Chromium 154 does not establish a matching Cromite build image and must not replace it without rebasing/applying and verifying the exact Cromite patches and toolchain. The safe next gate is to verify the exact release-specific image or build it using Cromite's upstream image-preparation workflow on a suitable already-available host.
+
+The green upstream-watch workflow means its metadata queries and reporting succeeded; the image-status warning is still a real blocker. No Chromium source build or MVM-branded APK has been produced by this project yet.
+
+## What this means
+
+1. The APK is useful as a ready browser to inspect UI/behavior on a test device, but it must not be called an integrated MVM engine.
+2. Cromite's repository is a patch/build project; its build guide describes release-specific Docker images, GN arguments and an ordered patch list. It is not an Android AAR that can be inserted into the current Kotlin app.
+3. The existing MVM script `scripts/build-chromium-android.sh` builds vanilla Chromium. It does not apply Cromite's patch set and must not be reused as a Cromite build command without an explicit implementation.
+4. The source fork needs a pinned Cromite revision, its matching build image, source/patch provenance, and a version/security review before producing a public release.
+5. The MVM Android app currently has `minSdk 24`; Cromite documents Android 10+ support. A Cromite browser fork must use a separate app target/configuration with Android 10+ minimum unless older support is proven by an actual build and device test.
+
+## Repeatable preflight
+
+Run from a machine with Python 3 and network access. The script queries the latest Cromite release and automatically reads Google's official Chrome Android release feed, using the highest announced Stable/Early Stable version:
+
+```bash
+python3 scripts/check-cromite-release.py
+```
+
+For a deliberately pinned/manual baseline or offline fixture test, supply `--stable-version MAJOR.MINOR.BUILD.PATCH`. During a build, the wrapper also supplies `--pinned-version` and `--pinned-commit`, ensuring the configured source pin matches the latest published Cromite release. A stale source version blocks by default; `--allow-stale-prototype` is an explicit exception only for isolated prototype testing and does not authorize distribution.
+
+To verify an APK already downloaded from the official release:
+
+```bash
+python3 scripts/check-cromite-release.py --stable-version 155.0.8059.39 --apk /path/to/arm64_ChromePublic.apk
+```
+
+The script checks the SHA-256 published by GitHub. A checksum match proves the bytes match the release metadata; it does not prove the browser is security-current.
+
+## Next implementation gate
+
+- [ ] Recheck current Chrome Stable and latest Cromite release.
+- [ ] Identify a Cromite release whose Chromium base is current enough for the intended test/release.
+- [ ] Confirm the release-specific build-image manifest is actually available; if not, follow upstream image preparation on an available host rather than substituting vanilla Chromium.
+- [ ] Read its release-specific build image and patch workflow.
+- [ ] Build only on an already-available suitable Linux x86-64 runner; do not create paid infrastructure automatically.
+- [ ] Keep MVM branding changes separate from upstream patch/build changes.
+- [ ] Preserve GPL-3.0 and third-party notices and review source-distribution obligations.

@@ -13,6 +13,13 @@ on:
       - 'scripts/verify-chromium-apk.sh'
       - 'scripts/smoke-test-chromium-device.sh'
       - 'scripts/report-chromium-upstream-status.py'
+      - 'scripts/check-cromite-release.py'
+      - 'scripts/build-cromite-android.sh'
+      - 'scripts/verify-cromite-mvm-apk.sh'
+      - 'tests/test_cromite_mvm_apk_verifier.py'
+      - 'docs/CROMITE_ANDROID_BUILD.md'
+      - 'docs/CROMITE_BASELINE_AUDIT.md'
+      - 'tests/test_cromite_release.py'
       - 'tests/test_chromium_upstream_status.py'
       - '.github/workflows/chromium-build-script-check.yml'
       - '.github/workflows/chromium-upstream-watch.yml'
@@ -30,6 +37,13 @@ on:
       - 'scripts/verify-chromium-apk.sh'
       - 'scripts/smoke-test-chromium-device.sh'
       - 'scripts/report-chromium-upstream-status.py'
+      - 'scripts/check-cromite-release.py'
+      - 'scripts/build-cromite-android.sh'
+      - 'scripts/verify-cromite-mvm-apk.sh'
+      - 'tests/test_cromite_mvm_apk_verifier.py'
+      - 'docs/CROMITE_ANDROID_BUILD.md'
+      - 'docs/CROMITE_BASELINE_AUDIT.md'
+      - 'tests/test_cromite_release.py'
       - 'tests/test_chromium_upstream_status.py'
       - '.github/workflows/chromium-build-script-check.yml'
       - '.github/workflows/chromium-upstream-watch.yml'
@@ -51,6 +65,7 @@ jobs:
       - name: Validate Bash syntax
         run: |
           bash -n scripts/build-chromium-android.sh
+          bash -n scripts/build-cromite-android.sh
           bash -n scripts/read-chromium-version.sh
           bash -n scripts/check-chromium-gclient-config.sh
           bash -n scripts/check-chromium-build-host.sh
@@ -59,8 +74,9 @@ jobs:
           bash -n scripts/smoke-test-chromium-device.sh
       - name: Validate and test upstream release report
         run: |
-          python3 -m py_compile scripts/report-chromium-upstream-status.py
+          python3 -m py_compile scripts/report-chromium-upstream-status.py scripts/check-cromite-release.py tests/test_cromite_release.py
           python3 -m unittest discover -s tests -p 'test_chromium_upstream_status.py' -v
+          python3 -m unittest discover -s tests -p 'test_cromite_release.py' -v
 
       - name: Test Chromium version parser
         shell: bash
@@ -175,6 +191,17 @@ jobs:
           grep -Fq 'gh release create "$TAG" "$RELEASE_APK"' .github/workflows/android-apk-release.yml
           grep -Fq 'sha256sum "$RELEASE_APK"' .github/workflows/android-apk-release.yml
           grep -Fq 'releases/latest/download/MVM-Browser.apk' README.md
+          grep -Fq 'CROMITE_VERSION="153.0.8010.37"' scripts/build-cromite-android.sh
+          grep -Fq 'CROMITE_SHA="11507ac1061b5ea227806f5e84db5a57df6ccf6a"' scripts/build-cromite-android.sh
+          grep -Fq 'DRY RUN ONLY' scripts/build-cromite-android.sh
+          grep -Fq 'docker pull "$IMAGE"' scripts/build-cromite-android.sh
+          grep -Fq 'chrome_public_apk --offline' scripts/build-cromite-android.sh
+          grep -Fq 'CROMITE_MIN_FREE_GIB' scripts/build-cromite-android.sh
+          grep -Fq 'MVM_PACKAGE_NAME="com.mvmsolo.mvmbrowser"' scripts/build-cromite-android.sh
+          grep -Fq 'chrome_public_manifest_package' scripts/build-cromite-android.sh
+          grep -Fq 'branding_status=package-id-only-upstream-ui' scripts/build-cromite-android.sh
+          bash -n scripts/verify-cromite-mvm-apk.sh
+          python3 tests/test_cromite_mvm_apk_verifier.py
           ruby -e 'require "yaml"; YAML.load_file(".github/workflows/chromium-self-hosted-build.yml", aliases: true)'
           grep -Fq 'workflow_dispatch:' .github/workflows/chromium-self-hosted-build.yml
           grep -Fq 'default: "no"' .github/workflows/chromium-self-hosted-build.yml

@@ -19,10 +19,20 @@ If that link is not available yet, open [Releases](https://github.com/MvMSOLO/mv
 
 ## Chromium migration and research
 
-MVM Browser is not yet running a bundled Chromium engine. Review the research docs before choosing the next architecture:
+**Selected direction: fork Cromite at source level and adapt it into an MVM-branded browser.** This does not mean embedding the Cromite APK or its System WebView APK inside the current app.
 
-- [Engine migration plan](docs/CHROMIUM_ENGINE_MIGRATION.md) — architecture and first proof-build steps.
-- [Feature port matrix](docs/CHROMIUM_FEATURE_PORT_MATRIX.md) — maps the current Kotlin/WebView features to the downstream Chromium shell and their acceptance checks.
+Start with [Cromite fork execution plan](docs/CROMITE_FORK_EXECUTION_PLAN.md). The plan requires a pinned source revision, security/version review, a reproducible ARM64 build, license compliance, and an on-device smoke test before claiming success. No paid cloud infrastructure should be created without explicit approval.
+
+Implementation tools:
+- [Cromite baseline audit](docs/CROMITE_BASELINE_AUDIT.md) — version/security gate and upstream references.
+- [Cromite Android build procedure](docs/CROMITE_ANDROID_BUILD.md) — pinned ARM64 build image and requirements.
+- [Cromite ARM64 build script](scripts/build-cromite-android.sh) — dry-run by default; only pulls the large image and compiles with explicit `--execute`.
+- [Cromite release freshness checker](scripts/check-cromite-release.py) — auto-detects the highest announced Chrome Android Stable/Early Stable version, verifies the configured source pin against the latest Cromite release, and can verify an APK checksum. Stale bases block builds by default.
+
+Supporting research and tooling:
+
+- [Engine migration plan](docs/CHROMIUM_ENGINE_MIGRATION.md) — architecture and integration constraints.
+- [Feature port matrix](docs/CHROMIUM_FEATURE_PORT_MATRIX.md) — maps current Kotlin/WebView features to the downstream Chromium shell and acceptance checks.
 - [Engine/resource research](docs/ENGINE_RESOURCE_RESEARCH.md) — host requirements, cloud-account constraints, and public pricing comparisons.
 - [Chromium base options](docs/CHROMIUM_BASE_OPTIONS.md) — upstream Chromium, Cromite source forks, and GeckoView, including version, maintenance, and licensing caveats.
 - [Distribution/security checklist](docs/CHROMIUM_DISTRIBUTION_CHECKLIST.md) — notices, source provenance, and update responsibilities.
@@ -30,16 +40,14 @@ MVM Browser is not yet running a bundled Chromium engine. Review the research do
 - [Chromium source cleanliness checker](scripts/check-chromium-source-clean.sh) — rejects tracked/untracked checkout changes that could make build provenance ambiguous.
 - [`.gclient` Android-target checker](scripts/check-chromium-gclient-config.sh) — safely confirms the checkout configuration includes Android without executing the config.
 - [Chromium version parser](scripts/read-chromium-version.sh) — validates upstream `chrome/VERSION` and produces a strict four-part version string.
-- [`.gclient` Android-target checker](scripts/check-chromium-gclient-config.sh) — safely validates the checkout configuration without executing Python configuration code.
-- [Chromium version parser](scripts/read-chromium-version.sh) — validates and formats the upstream `chrome/VERSION` fields for the build metadata.
-- [Chromium build script](scripts/build-chromium-android.sh) — builds an upstream arm64 proof APK on a suitable Linux host and writes provenance sidecars; it has not yet been run successfully in this environment.
-- [Manual self-hosted proof-build workflow](.github/workflows/chromium-self-hosted-build.yml) — only runs on a specifically labelled Linux runner after explicit confirmation and exact 40-character source/tool commits; it does not create a cloud host.
+- [Vanilla Chromium build script](scripts/build-chromium-android.sh) — builds an upstream arm64 proof APK on a suitable Linux host; it is not the selected product build path unless Cromite fails feasibility review.
+- [Manual self-hosted proof-build workflow](.github/workflows/chromium-self-hosted-build.yml) — designed for a specifically labelled Linux runner after explicit confirmation and exact 40-character source/tool commits; it does not create a cloud host.
 - [Offline APK verifier](scripts/verify-chromium-apk.sh) — checks APK ZIP integrity, manifest presence, APK/GN-args checksums, and source revision metadata; when `aapt` is available, it also validates package ID, minimum API, and arm64-v8a ABI.
 - [Android device smoke-test script](scripts/smoke-test-chromium-device.sh) — checks device authorization, Android API level, and ARM64 compatibility; installation requires `--install` plus interactive confirmation.
-- [Upstream version report script](scripts/report-chromium-upstream-status.py) — read-only parser for official Chrome Android release notes and public Cromite release/commit metadata, with a strict mode for incomplete reports.
-- [Weekly upstream resource watch](https://github.com/MvMSOLO/mvmbrowser/actions/workflows/chromium-upstream-watch.yml) — runs every Monday at 08:30 UTC, saves a 30-day report artifact, and can also be triggered manually.
+- [Upstream version report script](scripts/report-chromium-upstream-status.py) — read-only parser for official Chrome Android release notes and public Cromite release/commit metadata.
+- [Weekly upstream resource watch](https://github.com/MvMSOLO/mvmbrowser/actions/workflows/chromium-upstream-watch.yml) — saves a 30-day report artifact and can also be triggered manually.
 
-The bootstrap CI tests script syntax, release/version parsers, `.gclient` Android configuration, source-cleanliness checks, resource/config guards, synthetic APK metadata/signature checks, and a mocked Android-device preflight. It does not compile Chromium. The live release-watch workflow has been tested against public metadata, but its report is only a version signal—not a security audit.
+The bootstrap CI tests script syntax, release/version parsers, `.gclient` Android configuration, source-cleanliness checks, resource/config guards, synthetic APK metadata/signature checks, and a mocked Android-device preflight. It does not compile Chromium or Cromite. The upstream watch is a version signal—not a security audit.
 
 ## Build locally
 
