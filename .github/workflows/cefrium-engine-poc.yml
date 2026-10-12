@@ -39,8 +39,8 @@ jobs:
           # required platform and build-tools in the next explicit step.
           packages: "platform-tools"
 
-      - name: Install Android 37 platform and build-tools
-        run: sdkmanager --install "platforms;android-37" "build-tools;37.0.0"
+      - name: Install Android 36 platform and build-tools
+        run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -58,7 +58,7 @@ jobs:
           APK="experiments/cefrium-proof/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
           unzip -t "$APK" >/dev/null
-          AAPT="$ANDROID_HOME/build-tools/37.0.0/aapt"
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
           test -x "$AAPT"
           "$AAPT" dump badging "$APK" | grep -F "package: name='com.mvmsolo.mvmbrowser.cefriumproof'"
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libcef.so"
