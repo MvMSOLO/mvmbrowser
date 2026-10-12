@@ -10,6 +10,8 @@ Once the release pipeline completes, the latest generated APK will be available 
 
 If that link is not available yet, open [Releases](https://github.com/MvMSOLO/mvmbrowser/releases) or check the [APK build workflow](https://github.com/MvMSOLO/mvmbrowser/actions/workflows/android-apk-release.yml).
 
+**Install/build note:** the current published APK is an installable Android **debug/test build**, not a production-signed Play Store release. Its application ID is `com.mvmsolo.mvmbrowser.debug`. Each GitHub-hosted build can use a different debug signing key, so installing an APK from a different run may require uninstalling the old debug build first. New releases include a `MVM-Browser.apk.sha256` checksum file.
+
 ## Current status
 
 - Android APK builds on GitHub Actions.
