@@ -120,6 +120,7 @@ footer{border-color:#302337}
   <div class="gx-module"><div class="gx-module-title">MOTION ENGINE <button class="gx-toggle on" id="motionToggle" aria-label="Toggle animations" aria-pressed="true"></button></div><p>Reactive glow, ambient motion and tactile transitions. Switch off to reduce visual motion.</p><div class="gx-meter"><span></span></div></div>
   <div class="gx-module"><div class="gx-module-title">SPATIAL SOUND FX <button class="gx-toggle on" id="soundToggle" aria-label="Toggle sound effects" aria-pressed="true"></button></div><p>Original synthesized UI tones. Sounds only play after you interact with the page; no audio files or background music.</p></div>
   <div class="gx-module"><div class="gx-module-title">VISUAL PROFILE <span style="color:#ff819a">NEON / 01</span></div><p>Crimson highlights, ultraviolet depth and electric-cyan signal accents.</p></div>
+  <button class="gx-shortcut" id="consoleProfile"><span>♙ &nbsp; Profile & personal memory</span><span>LOCAL ↗</span></button>
   <button class="gx-shortcut" id="consoleSearch"><span>⌕ &nbsp; Focus search field</span><span>GO ↗</span></button>
   <button class="gx-shortcut" id="consoleHome"><span>⌂ &nbsp; Reset discovery page</span><span>RESET ↻</span></button>
  </aside>
@@ -167,6 +168,7 @@ footer{border-color:#302337}
  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();input.focus();}});
  soundToggle.addEventListener('click',()=>{soundEnabled=!soundEnabled;setToggle(soundToggle,soundEnabled);if(soundEnabled)tone('open');});
  motionToggle.addEventListener('click',()=>{motionEnabled=!motionEnabled;setToggle(motionToggle,motionEnabled);document.documentElement.classList.toggle('motion-off',!motionEnabled);});
+ document.getElementById('consoleProfile').addEventListener('click',()=>{closeDrawer();tone('tap');if(window.BrowserBridge&&typeof window.BrowserBridge.profileMemory==='function'){window.BrowserBridge.profileMemory();}});
  document.getElementById('consoleSearch').addEventListener('click',()=>{closeDrawer();input.focus();tone('tap');});
  document.getElementById('consoleHome').addEventListener('click',()=>{closeDrawer();results.classList.remove('active');discover.classList.remove('hidden');input.value='';tone('tap');window.scrollTo({top:0,behavior:motionEnabled?'smooth':'auto'});});
  document.querySelectorAll('button').forEach(el=>{if(!el.closest('.gx-console'))el.addEventListener('click',()=>tone(el.matches('.go')?'search':'tap'),{passive:true});});

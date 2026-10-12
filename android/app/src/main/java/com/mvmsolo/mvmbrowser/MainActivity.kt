@@ -446,6 +446,7 @@ class MainActivity : Activity() {
         options.add("↓  Offline pages")
         options.add("◷  History")
         options.add("♧  Clear browsing data")
+        options.add("♙  Profile & Memory")
         AlertDialog.Builder(this).setTitle("Tabs & library").setItems(options.toTypedArray()) { _, which ->
             when {
                 which < tabs.size -> activate(which)
@@ -453,10 +454,94 @@ class MainActivity : Activity() {
                 which == tabs.size + 1 -> showSavedList("bookmarks", "Bookmarks", false)
                 which == tabs.size + 2 -> showSavedList("offline-pages", "Offline pages", true)
                 which == tabs.size + 3 -> showHistory()
-                else -> showClearDataDialog()
+                which == tabs.size + 4 -> showClearDataDialog()
+                else -> showProfileMemoryDialog()
             }
         }.setNegativeButton("Close current tab") { _, _ -> closeActiveTab() }
             .setNeutralButton("Clear history") { _, _ -> prefs.edit().remove("history").apply(); toast("History cleared") }
+            .show()
+    }
+
+    /**
+     * Device-local identity and personal note. This is deliberately not called
+     * an account login: the native APK has no configured auth API/OAuth redirect
+     * and must not pretend local fields authenticate a server account.
+     */
+    private fun showProfileMemoryDialog() {
+        val form = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(4), dp(20), 0)
+        }
+        val profileLabel = label("DEVICE PROFILE · LOCAL ONLY", 11f, cyan, true).apply {
+            setPadding(0, dp(3), 0, dp(8))
+        }
+        val explanation = label(
+            "Profile details and this note stay in the app's storage on this device. Sign-in, AI memory and cloud sync are not connected in this APK. Do not save passwords or secret keys here.",
+            12f,
+            muted,
+            false
+        ).apply {
+            setLineSpacing(dp(2).toFloat(), 1f)
+            setPadding(0, 0, 0, dp(10))
+        }
+        val nameField = EditText(this).apply {
+            hint = "Display name"
+            setTextColor(textColor)
+            setHintTextColor(muted)
+            setSingleLine(true)
+            setText(prefs.getString("profile_name", ""))
+        }
+        val emailField = EditText(this).apply {
+            hint = "Email (optional)"
+            setTextColor(textColor)
+            setHintTextColor(muted)
+            setSingleLine(true)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+            setText(prefs.getString("profile_email", ""))
+        }
+        val memoryField = EditText(this).apply {
+            hint = "Personal note / preferences"
+            setTextColor(textColor)
+            setHintTextColor(muted)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            gravity = Gravity.TOP
+            minLines = 3
+            maxLines = 6
+            setHorizontallyScrolling(false)
+            setText(prefs.getString("profile_memory", ""))
+        }
+        form.addView(profileLabel)
+        form.addView(explanation)
+        form.addView(nameField, LinearLayout.LayoutParams(-1, dp(48)))
+        form.addView(emailField, LinearLayout.LayoutParams(-1, dp(48)))
+        form.addView(memoryField, LinearLayout.LayoutParams(-1, dp(124)))
+
+        AlertDialog.Builder(this)
+            .setTitle("Profile & Memory")
+            .setView(form)
+            .setPositiveButton("Save") { _, _ ->
+                prefs.edit()
+                    .putString("profile_name", nameField.text.toString().trim().take(80))
+                    .putString("profile_email", emailField.text.toString().trim().take(254))
+                    .putString("profile_memory", memoryField.text.toString().trim().take(2000))
+                    .apply()
+                toast("Profile and note saved on this device")
+            }
+            .setNeutralButton("Clear memory") { _, _ ->
+                AlertDialog.Builder(this)
+                    .setTitle("Clear personal memory?")
+                    .setMessage("This permanently removes the saved personal note from this device.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Clear") { _, _ ->
+                        prefs.edit().remove("profile_memory").apply()
+                        toast("Personal memory cleared")
+                    }
+                    .show()
+            }
+            .setNegativeButton("Close", null)
             .show()
     }
 
@@ -527,6 +612,13 @@ class MainActivity : Activity() {
         @android.webkit.JavascriptInterface fun home() { runOnUiThread { if (tabFor(sourceWeb) != null) this@MainActivity.home(sourceWeb) } }
         @android.webkit.JavascriptInterface fun bookmark() { runOnUiThread { toggleBookmark(sourceWeb) } }
         @android.webkit.JavascriptInterface fun saveOffline() { runOnUiThread { this@MainActivity.saveOffline(sourceWeb) } }
+        @android.webkit.JavascriptInterface fun profileMemory() {
+            runOnUiThread {
+                if (tabFor(sourceWeb) != null && isBundledHomeUrl(sourceWeb.url.orEmpty())) {
+                    showProfileMemoryDialog()
+                }
+            }
+        }
         @android.webkit.JavascriptInterface fun newTab() { runOnUiThread { this@MainActivity.newTab() } }
         @android.webkit.JavascriptInterface fun openUrl(rawUrl: String) {
             runOnUiThread {
