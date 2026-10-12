@@ -33,6 +33,11 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The action's legacy default installs the removed "tools" package.
+          # Install only the maintained platform-tools package here; pin the
+          # required platform and build-tools in the next explicit step.
+          packages: "platform-tools"
 
       - name: Install Android 37 platform and build-tools
         run: sdkmanager --install "platforms;android-37" "build-tools;37.0.0"
