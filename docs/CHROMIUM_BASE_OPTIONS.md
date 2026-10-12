@@ -1,6 +1,6 @@
 # MVM Browser — Chromium Base Options (Decision Note)
 
-Research date: 2026-10-11
+Research date: 2026-10-12
 
 ## Decision
 
@@ -54,11 +54,19 @@ Decision: do not spend resources on a separate vanilla Chromium proof build in p
 
 Source: https://github.com/qwez-dev/cromite
 
-This fork's stated goal is to track Chromium stable more closely, but the repository snapshot reviewed for this research did not provide GitHub release artifacts proving a ready, security-current binary. A stated maintenance goal is not evidence of security freshness.
+A recheck on 2026-10-12 found `build/RELEASE = 148.0.7778.168`, repository last-pushed date 2026-08-24, and no published GitHub release endpoint. This is older than the official uazo/Cromite v153 release and behind current Chrome Android Stable.
 
-Decision: do not switch to it without comparing the exact Chromium base, patch series, build workflow, license and successful build output.
+Decision: do not switch. A stated maintenance goal is not evidence of freshness; a fork must prove its base version, patch series, build workflow, license, and successful build output.
 
-## Candidate D — Mozilla GeckoView (not selected)
+## Candidate D — Etherdrake Cromite fork (rejected)
+
+Source: https://github.com/Etherdrake/cromite
+
+The repository snapshot was last pushed on 2025-02-13, its `build/RELEASE` reports `133.0.6943.60`, and no published GitHub release endpoint was returned. This baseline is older than both official Cromite v153 and Chrome Android Stable 155.
+
+Decision: reject as an engine baseline; it offers no demonstrated security freshness or reproducible released Android artifact.
+
+## Candidate E — Mozilla GeckoView (not selected)
 
 Source: https://github.com/mozilla/geckoview
 

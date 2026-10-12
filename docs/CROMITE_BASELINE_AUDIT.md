@@ -14,6 +14,17 @@
 - Official release notes reported Chrome Stable 155.0.8059.39 on 2026-10-06; Chrome for Android 156.0.8078.25 was then in an Early Stable rollout to a small percentage of users on 2026-10-07: https://chromereleases.googleblog.com/
 - The automated freshness gate conservatively compares Cromite against the highest version in the official Chrome Android Stable/Early Stable release feed. The published Cromite v153 release is behind both of these baselines. This version comparison is a warning gate, not a complete CVE audit.
 
+## Alternative-source recheck — 2026-10-12
+
+The latest-releases API still points to the official uazo/Cromite `v153.0.8010.37` release from 2026-09-15. Chrome Android Stable is `155.0.8059.39` as of 2026-10-06, so the freshness gate remains blocked. This does not substitute for a vulnerability-by-vulnerability audit.
+
+Two other public Cromite forks were checked rather than assumed to be fresher:
+
+- [qwez-dev/cromite](https://github.com/qwez-dev/cromite): default branch `master`; repository last pushed 2026-08-24; `build/RELEASE` reports `148.0.7778.168`; no published GitHub release was returned. Its stated aim to track stable is not evidence that its checked-in baseline is current.
+- [Etherdrake/cromite](https://github.com/Etherdrake/cromite): default branch `master`; repository last pushed 2025-02-13; `build/RELEASE` reports `133.0.6943.60`; no published GitHub release was returned.
+
+Decision: neither fork is a fresher replacement for official Cromite v153. Keep the version gate closed; do not switch to a lower-version fork or treat an unpublished branch as a verified security-current release. Vanilla upstream Chromium remains the fallback if Cromite cannot meet the version/security gate and a suitable build host becomes available.
+
 ## Build-image availability status (checked 2026-10-11)
 
 GitHub Actions run [#38139634564](https://github.com/MvMSOLO/mvmbrowser/actions/runs/38139634564) executed `docker manifest inspect` for `uazo/cromite-build:153.0.8010.37-11507ac1061b5ea227806f5e84db5a57df6ccf6a`. The registry manifest could not be verified; the workflow emitted a warning and did not pull the image or compile anything. Treat the result as **unverified/blocked**, not as conclusive evidence that the tag is absent.
